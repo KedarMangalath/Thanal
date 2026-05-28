@@ -2,7 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { analyzeRoute } from "@thanal/shared";
 import { db } from "../db/db";
-import { fetchRoadRoute, routeCoordinates } from "../services/osrm";
+import { fetchRoadRoutes, routeCoordinates } from "../services/osrm";
+import { planRailRoute } from "../services/rail";
 
 const router = Router();
 
@@ -56,25 +57,59 @@ router.get("/:id/refresh", async (request, response, next) => {
 
     const start = { lat: route.startLat, lng: route.startLng };
     const end = { lat: route.endLat, lng: route.endLng };
-    const fallbackAverageSpeedKmh =
-      route.mode === "walk" ? 5 : route.mode === "bike" ? 24 : route.mode === "train" ? 48 : 34;
-    let coordinates = [start, end];
-    let averageSpeedKmh = fallbackAverageSpeedKmh;
-    let roadRoute = null;
 
-    try {
-      roadRoute = await fetchRoadRoute(start, end);
-      coordinates = routeCoordinates(roadRoute);
-      averageSpeedKmh = Math.max(18, (roadRoute.distance / roadRoute.duration) * 3.6);
-    } catch {
-      roadRoute = null;
+    if (route.mode === "train") {
+      const rail = planRailRoute({ start, end, departureTime });
+      if (rail.options.length === 0 || !rail.analysis) {
+        response.status(422).json({ error: "No rail corridor found for this saved route." });
+        return;
+      }
+
+      response.json({
+        savedRoute: route,
+        options: rail.options,
+        recommendedOptionId: rail.recommendedOptionId,
+        analysis: rail.analysis,
+        routeSource: rail.source
+      });
+      return;
     }
+
+    const routes = await fetchRoadRoutes(start, end, 3);
+    const options = routes.map((roadRoute, index) => {
+      const coordinates = routeCoordinates(roadRoute);
+      const averageSpeedKmh =
+        route.mode === "walk"
+          ? 5
+          : route.mode === "bike"
+            ? 24
+            : Math.max(18, (roadRoute.distance / roadRoute.duration) * 3.6);
+
+      return {
+        id: `saved-${route.id}-${index + 1}`,
+        label: index === 0 ? "Recommended road route" : `Alternative road route ${index + 1}`,
+        route: roadRoute,
+        coordinates,
+        analysis: analyzeRoute(coordinates, { departureTime, averageSpeedKmh })
+      };
+    });
+    const recommended = options
+      .map((option) => ({
+        option,
+        score:
+          option.analysis.directSunMinutesBySide.left +
+          option.analysis.directSunMinutesBySide.right +
+          option.analysis.glareWindows.length * 8 +
+          option.analysis.totalDurationMinutes * 0.15
+      }))
+      .sort((a, b) => a.score - b.score)[0]?.option;
 
     response.json({
       savedRoute: route,
-      route: roadRoute,
-      analysis: analyzeRoute(coordinates, { departureTime, averageSpeedKmh }),
-      routeSource: roadRoute ? "osrm" : "direct"
+      options,
+      recommendedOptionId: recommended?.id,
+      analysis: recommended?.analysis,
+      routeSource: "osrm"
     });
   } catch (error) {
     next(error);
