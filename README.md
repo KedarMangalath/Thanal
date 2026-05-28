@@ -2,7 +2,7 @@
 
 > *Thanal* means shade in Malayalam. Because sometimes the best feature a navigation app can have is knowing when to get out of the sun.
 
-Thanal is a Kerala-first travel comfort assistant. It tells commuters which side of a bus or train to sit on to avoid harsh sun, shows multiple road or rail route options, warns riders about glare and rain risk, and scores a route by heat, UV, humidity, and exposure.
+Thanal is a travel comfort assistant. It tells commuters which side of a bus or train to sit on to avoid harsh sun, shows multiple road or rail route options, warns riders about glare and rain risk, and scores a route by heat, UV, humidity, and exposure.
 
 ## The Story
 
