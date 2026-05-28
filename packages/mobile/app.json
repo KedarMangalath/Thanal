@@ -6,12 +6,19 @@
     "orientation": "portrait",
     "scheme": "thanal",
     "userInterfaceStyle": "light",
+    "icon": "../../assets/Thanal_Logo.png",
+    "splash": {
+      "image": "../../assets/Thanal_text_png.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f5f7f3"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "../../assets/Thanal_Logo.png",
         "backgroundColor": "#0f766e"
       }
     },

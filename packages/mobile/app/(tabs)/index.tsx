@@ -1,12 +1,18 @@
 import { Link } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import ComfortScore from "../../components/ComfortScore";
+
+const brandText = require("../../../../assets/Thanal_text_png.png");
+const brandLogo = require("../../../../assets/Thanal_Logo.png");
 
 export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.kicker}>Thanal</Text>
+        <View style={styles.brandRow}>
+          <Image source={brandLogo} style={styles.logo} />
+          <Image source={brandText} style={styles.wordmark} resizeMode="contain" />
+        </View>
         <Text style={styles.title}>Kerala commute comfort, before you leave.</Text>
         <Text style={styles.body}>
           Check the shaded bus side, glare stretches, and rain risk for routes that actually feel
@@ -34,10 +40,20 @@ const styles = StyleSheet.create({
   header: {
     gap: 8
   },
-  kicker: {
-    color: "#0f766e",
-    fontSize: 16,
-    fontWeight: "700"
+  brandRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 4
+  },
+  logo: {
+    borderRadius: 12,
+    height: 58,
+    width: 58
+  },
+  wordmark: {
+    height: 34,
+    width: 128
   },
   title: {
     color: "#17211f",

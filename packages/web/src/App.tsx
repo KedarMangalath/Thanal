@@ -6,19 +6,10 @@ import {
   type RouteAnalysis,
   type WeatherSnapshot
 } from "@thanal/shared";
-import {
-  Bike,
-  BookmarkPlus,
-  Bus,
-  Clock,
-  LocateFixed,
-  MapPin,
-  Navigation,
-  Search,
-  Sun,
-  Trash2
-} from "lucide-react";
+import { Bike, BookmarkPlus, Bus, Clock, LocateFixed, MapPin, Navigation, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import brandLogoUrl from "../../../assets/Thanal_Logo.png";
+import brandTextUrl from "../../../assets/Thanal_text_png.png";
 import ComfortScore from "./components/ComfortScore";
 import MapPicker from "./components/MapPicker";
 import RainWindow from "./components/RainWindow";
@@ -191,10 +182,10 @@ export default function App() {
         <aside className="control-panel">
           <div className="brand-row">
             <span className="brand-mark">
-              <Sun size={22} />
+              <img alt="" src={brandLogoUrl} />
             </span>
             <div>
-              <h1>Thanal</h1>
+              <img alt="Thanal" className="brand-wordmark" src={brandTextUrl} />
               <p>Sun-aware travel for Kerala routes</p>
             </div>
           </div>

@@ -66,20 +66,28 @@ input {
 
 .brand-mark {
   align-items: center;
-  background: #ffe08a;
-  border: 1px solid #efbd3d;
+  background: #ffffff;
+  border: 1px solid #d7e0db;
   border-radius: 8px;
-  color: #5b3b00;
   display: inline-flex;
   height: 44px;
   justify-content: center;
+  overflow: hidden;
   width: 44px;
 }
 
-h1 {
-  font-size: 28px;
-  line-height: 1;
-  margin: 0;
+.brand-mark img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.brand-wordmark {
+  display: block;
+  height: 30px;
+  object-fit: contain;
+  object-position: left center;
+  width: 120px;
 }
 
 p {
