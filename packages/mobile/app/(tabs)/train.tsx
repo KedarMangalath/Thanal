@@ -11,16 +11,10 @@ import { useComfortScore } from "../../hooks/useComfortScore";
 import { useWeather } from "../../hooks/useWeather";
 import { fetchRailRoute, searchRailStations } from "../../utils/api";
 
-const sampleRail: LatLng[] = [
-  { lat: 8.4875, lng: 76.9525 },
-  { lat: 10.5167, lng: 76.207 },
-  { lat: 11.2456, lng: 75.7817 }
-];
-
 export default function TrainScreen() {
-  const [start, setStart] = useState<LatLng | null>(sampleRail[0]);
-  const [end, setEnd] = useState<LatLng | null>(sampleRail[2]);
-  const [route, setRoute] = useState<LatLng[]>(sampleRail);
+  const [start, setStart] = useState<LatLng | null>(null);
+  const [end, setEnd] = useState<LatLng | null>(null);
+  const [route, setRoute] = useState<LatLng[]>([]);
   const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
   const [status, setStatus] = useState("Search railway stations or tap the map.");
   const weather = useWeather();

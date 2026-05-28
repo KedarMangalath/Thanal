@@ -36,27 +36,6 @@ export default function SavedScreen() {
     loadRoutes();
   }, [loadRoutes]);
 
-  async function createDemoRoute() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/saved-routes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "TVM to Thrissur",
-          mode: "bus",
-          start: { lat: 8.5241, lng: 76.9366 },
-          end: { lat: 10.5276, lng: 76.2144 },
-          departureTime: new Date().toISOString()
-        })
-      });
-
-      if (!response.ok) throw new Error("Save failed.");
-      await loadRoutes();
-    } catch {
-      setStatus("Could not save the demo commute.");
-    }
-  }
-
   async function refreshRoute(route: SavedRoute) {
     setStatus(`Refreshing ${route.name}.`);
 
@@ -94,8 +73,8 @@ export default function SavedScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Saved commutes</Text>
-      <Pressable style={styles.button} onPress={createDemoRoute}>
-        <Text style={styles.buttonText}>Save sample commute</Text>
+      <Pressable style={styles.button} onPress={loadRoutes}>
+        <Text style={styles.buttonText}>Refresh saved commutes</Text>
       </Pressable>
       <Text style={styles.status}>{status}</Text>
       {notificationStatus ? <Text style={styles.status}>{notificationStatus}</Text> : null}

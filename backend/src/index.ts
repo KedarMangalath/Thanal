@@ -1,12 +1,16 @@
 import cors from "cors";
 import express from "express";
+import { loadBackendEnv } from "./config/env";
 import { errorHandler } from "./middleware/errorHandler";
+import assistantRouter from "./routes/assistant";
 import communityRouter from "./routes/community";
 import placesRouter from "./routes/places";
 import railRouter from "./routes/rail";
 import routeRouter from "./routes/route";
 import savedRoutesRouter from "./routes/savedRoutes";
 import weatherRouter from "./routes/weather";
+
+loadBackendEnv();
 
 const app = express();
 const port = Number(process.env.PORT ?? 4010);
@@ -19,6 +23,7 @@ app.get("/health", (_request, response) => {
 });
 
 app.use("/api/route", routeRouter);
+app.use("/api/assistant", assistantRouter);
 app.use("/api/weather", weatherRouter);
 app.use("/api/places", placesRouter);
 app.use("/api/rail", railRouter);

@@ -17,7 +17,7 @@ Thanal is my attempt at building this properly — a travel companion that actua
 - Tap-to-select start and destination points
 - Place search through the backend Nominatim proxy
 - OSRM road routing with route polyline display
-- Train mode prototype with station search and rail-side sun analysis
+- Train mode with station search, route options, and rail-side sun analysis
 - SunCalc-based segment analysis for sun side, seat recommendation, glare, and timeline exposure
 - Open-Meteo weather lookup for UV, humidity, temperature, and rain probability
 - Real rain-window strip from hourly forecast data
@@ -33,7 +33,7 @@ Thanal is my attempt at building this properly — a travel companion that actua
 | Web | React + Vite |
 | Maps | Leaflet, React Native Maps, OpenStreetMap |
 | Road Routing | OSRM public API |
-| Rail Routing | Kerala railway station-route prototype |
+| Rail Routing | Kerala railway station route engine |
 | Place Search | Nominatim proxy |
 | Sun Math | SunCalc.js |
 | Weather | Open-Meteo |

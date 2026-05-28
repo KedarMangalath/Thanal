@@ -10,17 +10,10 @@ import { useRoute } from "../../hooks/useRoute";
 import { useWeather } from "../../hooks/useWeather";
 import PlaceSearch from "../../components/PlaceSearch";
 
-const sampleRide: LatLng[] = [
-  { lat: 10.0149, lng: 76.3419 },
-  { lat: 9.9816, lng: 76.2999 }
-];
-
 export default function RideScreen() {
-  const [start, setStart] = useState<LatLng | null>(sampleRide[0]);
-  const [end, setEnd] = useState<LatLng | null>(sampleRide[1]);
-  const [analysis, setAnalysis] = useState<RouteAnalysis | null>(() =>
-    analyzeRoute(sampleRide, { departureTime: new Date(), averageSpeedKmh: 24 })
-  );
+  const [start, setStart] = useState<LatLng | null>(null);
+  const [end, setEnd] = useState<LatLng | null>(null);
+  const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
   const route = useRoute();
   const weather = useWeather();
   const comfort = useComfortScore(weather.weather);
@@ -61,7 +54,7 @@ export default function RideScreen() {
       <Text style={styles.title}>Ride planner</Text>
       <PlaceSearch label="Start" onSelect={selectStart} />
       <PlaceSearch label="Destination" onSelect={selectEnd} />
-      <MapPicker start={start} end={end} route={route.coordinates.length > 0 ? route.coordinates : sampleRide} onPick={onPick} />
+      <MapPicker start={start} end={end} route={route.coordinates} onPick={onPick} />
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Shade preference</Text>

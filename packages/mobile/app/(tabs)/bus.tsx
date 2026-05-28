@@ -11,23 +11,15 @@ import { useComfortScore } from "../../hooks/useComfortScore";
 import ComfortScore from "../../components/ComfortScore";
 import RainWindow from "../../components/RainWindow";
 
-const sampleRoute: LatLng[] = [
-  { lat: 8.5241, lng: 76.9366 },
-  { lat: 9.4981, lng: 76.3388 },
-  { lat: 10.5276, lng: 76.2144 }
-];
-
 export default function BusScreen() {
-  const [start, setStart] = useState<LatLng | null>(sampleRoute[0]);
-  const [end, setEnd] = useState<LatLng | null>(sampleRoute[2]);
-  const [startName, setStartName] = useState("Thiruvananthapuram");
-  const [endName, setEndName] = useState("Thrissur");
+  const [start, setStart] = useState<LatLng | null>(null);
+  const [end, setEnd] = useState<LatLng | null>(null);
+  const [startName, setStartName] = useState("Tap map");
+  const [endName, setEndName] = useState("Tap map");
   const route = useRoute();
   const weather = useWeather();
   const comfort = useComfortScore(weather.weather);
-  const [analysis, setAnalysis] = useState<RouteAnalysis | null>(() =>
-    analyzeRoute(sampleRoute, { departureTime: new Date(), averageSpeedKmh: 42 })
-  );
+  const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
 
   function onPick(point: LatLng) {
     if (!start || (start && end)) {
@@ -75,7 +67,7 @@ export default function BusScreen() {
       <Text style={styles.title}>Bus seat picker</Text>
       <PlaceSearch label="Start" onSelect={selectStart} />
       <PlaceSearch label="Destination" onSelect={selectEnd} />
-      <MapPicker start={start} end={end} route={route.coordinates.length > 0 ? route.coordinates : sampleRoute} onPick={onPick} />
+      <MapPicker start={start} end={end} route={route.coordinates} onPick={onPick} />
 
       <View style={styles.pointPanel}>
         <Point label="Start" point={start} name={startName} />

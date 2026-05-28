@@ -6,6 +6,8 @@ type MapPickerProps = {
   start: LatLng | null;
   end: LatLng | null;
   route: LatLng[];
+  routes?: Array<{ id: string; coordinates: LatLng[] }>;
+  activeRouteId?: string | null;
   onPick: (point: LatLng) => void;
 };
 
@@ -25,7 +27,9 @@ const endIcon = new L.DivIcon({
   iconAnchor: [15, 15]
 });
 
-export default function MapPicker({ start, end, route, onPick }: MapPickerProps) {
+export default function MapPicker({ start, end, route, routes = [], activeRouteId, onPick }: MapPickerProps) {
+  const visibleRoutes = routes.length > 0 ? routes : route.length > 1 ? [{ id: "route", coordinates: route }] : [];
+
   return (
     <MapContainer center={center} zoom={8} className="map-canvas" scrollWheelZoom>
       <TileLayer
@@ -33,12 +37,20 @@ export default function MapPicker({ start, end, route, onPick }: MapPickerProps)
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapClickHandler onPick={onPick} />
-      {route.length > 1 ? (
-        <Polyline
-          positions={route.map((point) => [point.lat, point.lng])}
-          pathOptions={{ color: "#0f766e", weight: 6, opacity: 0.86 }}
-        />
-      ) : null}
+      {visibleRoutes.map((candidate) => {
+        const isActive = !activeRouteId || candidate.id === activeRouteId;
+        return (
+          <Polyline
+            key={candidate.id}
+            positions={candidate.coordinates.map((point) => [point.lat, point.lng])}
+            pathOptions={{
+              color: isActive ? "#5b35f0" : "#8fb8ff",
+              weight: isActive ? 7 : 4,
+              opacity: isActive ? 0.9 : 0.5
+            }}
+          />
+        );
+      })}
       {start ? <Marker position={[start.lat, start.lng]} icon={startIcon} /> : null}
       {end ? <Marker position={[end.lat, end.lng]} icon={endIcon} /> : null}
     </MapContainer>

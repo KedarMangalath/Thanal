@@ -1,7 +1,7 @@
 import { analyzeRoute, type LatLng } from "@thanal/shared";
 import { Router } from "express";
 import { z } from "zod";
-import { fetchRoadRoute, routeCoordinates } from "../services/osrm";
+import { fetchRoadRoutes, routeCoordinates } from "../services/osrm";
 
 const router = Router();
 
@@ -21,12 +21,24 @@ router.get("/", async (request, response, next) => {
     const start = parseLatLng(String(request.query.start ?? ""));
     const end = parseLatLng(String(request.query.end ?? ""));
     const departureTime = new Date(String(request.query.departureTime ?? new Date().toISOString()));
-    const route = await fetchRoadRoute(start, end);
-    const coordinates = routeCoordinates(route);
+    const routes = await fetchRoadRoutes(start, end, 3);
+    const options = routes.map((route, index) => {
+      const coordinates = routeCoordinates(route);
+      return {
+        id: `road-${index + 1}`,
+        label: index === 0 ? "Recommended road route" : `Alternative road route ${index + 1}`,
+        route,
+        coordinates,
+        analysis: analyzeRoute(coordinates, {
+          departureTime,
+          averageSpeedKmh: Math.max(18, (route.distance / route.duration) * 3.6)
+        })
+      };
+    });
 
     response.json({
-      route,
-      analysis: analyzeRoute(coordinates, { departureTime })
+      options,
+      recommendedOptionId: options[0]?.id
     });
   } catch (error) {
     next(error);

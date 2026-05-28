@@ -2,7 +2,7 @@
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #17211f;
-  background: #f5f7f3;
+  background: #f6fbf8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,8 +26,9 @@ input {
 .app-shell {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.48)),
-    #eef4ee;
+    radial-gradient(circle at 12% 18%, rgba(165, 214, 255, 0.36), transparent 34%),
+    radial-gradient(circle at 80% 8%, rgba(185, 242, 207, 0.44), transparent 32%),
+    linear-gradient(135deg, #fbfffd 0%, #edf8f6 52%, #f8f3ff 100%);
 }
 
 .workspace {
@@ -48,8 +49,10 @@ input {
 }
 
 .control-panel {
-  background: rgba(255, 255, 255, 0.94);
-  border-left: 1px solid #d9e3dc;
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.78);
+  border-left: 1px solid rgba(215, 224, 219, 0.7);
+  box-shadow: -24px 0 70px rgba(31, 58, 52, 0.12);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -130,6 +133,15 @@ button {
   justify-content: center;
   min-height: 42px;
   padding: 0 14px;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    color 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
 }
 
 button:disabled {
@@ -149,12 +161,13 @@ button:disabled {
 }
 
 .primary {
-  background: #0f766e;
+  background: linear-gradient(135deg, #0f766e, #4f46e5);
+  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.22);
   color: white;
 }
 
 .secondary {
-  background: #edf2f0;
+  background: rgba(237, 242, 240, 0.9);
   color: #1f332d;
 }
 
@@ -283,11 +296,72 @@ input {
 
 .result-card,
 .metric-tile,
-.empty-state {
-  background: #ffffff;
-  border: 1px solid #d7e0db;
+.empty-state,
+.route-options,
+.assistant-card {
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(215, 224, 219, 0.72);
   border-radius: 8px;
+  box-shadow: 0 16px 45px rgba(38, 61, 56, 0.08);
   padding: 15px;
+}
+
+.route-options {
+  display: grid;
+  gap: 9px;
+}
+
+.route-option {
+  align-items: flex-start;
+  background: rgba(246, 248, 246, 0.88);
+  border: 1px solid rgba(215, 224, 219, 0.9);
+  color: #17211f;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-height: 74px;
+  padding: 12px;
+  text-align: left;
+}
+
+.route-option.active {
+  background: linear-gradient(135deg, rgba(91, 53, 240, 0.12), rgba(15, 118, 110, 0.12));
+  border-color: rgba(91, 53, 240, 0.42);
+  box-shadow: 0 14px 32px rgba(91, 53, 240, 0.14);
+}
+
+.route-option span {
+  color: #66736d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.route-option strong {
+  color: #17211f;
+  font-size: 20px;
+}
+
+.assistant-card {
+  display: grid;
+  gap: 10px;
+}
+
+.assistant-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.assistant-answer {
+  background: rgba(246, 248, 246, 0.9);
+  border: 1px solid rgba(215, 224, 219, 0.85);
+  border-radius: 8px;
+  color: #20322d;
+  font-size: 13px;
+  line-height: 19px;
+  padding: 11px;
+  white-space: pre-wrap;
 }
 
 .recommendation {

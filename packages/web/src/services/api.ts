@@ -10,6 +10,19 @@ export type OsrmRoute = {
   duration: number;
 };
 
+export type RouteOption = {
+  id: string;
+  label: string;
+  route?: OsrmRoute;
+  coordinates: LatLng[];
+  analysis: RouteAnalysis;
+};
+
+export type RouteOptionsResponse = {
+  options: RouteOption[];
+  recommendedOptionId?: string;
+};
+
 export type SavedRoute = {
   id: number;
   name: string;
@@ -24,6 +37,8 @@ export type SavedRoute = {
 export type RailRoute = {
   source: string;
   confidence: "low" | "medium" | "high";
+  options: RouteOption[];
+  recommendedOptionId: string;
   coordinates: LatLng[];
   stations: Array<LatLng & { code: string; name: string }>;
   from: LatLng & { code: string; name: string };
@@ -57,6 +72,24 @@ export async function fetchRoute(start: LatLng, end: LatLng): Promise<OsrmRoute>
   }
 
   return data.routes[0];
+}
+
+export async function fetchRouteOptions(input: {
+  start: LatLng;
+  end: LatLng;
+  departureTime: string;
+}): Promise<RouteOptionsResponse> {
+  const url = new URL(`${BACKEND_URL}/api/route`);
+  url.searchParams.set("start", `${input.start.lat},${input.start.lng}`);
+  url.searchParams.set("end", `${input.end.lat},${input.end.lng}`);
+  url.searchParams.set("departureTime", input.departureTime);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Road route is unavailable.");
+  }
+
+  return response.json();
 }
 
 export async function fetchWeather(point: LatLng): Promise<WeatherSnapshot> {
@@ -141,6 +174,26 @@ export async function searchRailStations(query: string): Promise<PlaceResult[]> 
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error("Rail station search is unavailable.");
+  }
+
+  return response.json();
+}
+
+export async function askAssistant(input: {
+  message: string;
+  mode: "bus" | "bike" | "walk" | "train";
+  start: LatLng | null;
+  end: LatLng | null;
+  departureTime: string;
+}): Promise<{ answer: string; model: string; toolTrace: unknown[] }> {
+  const response = await fetch(`${BACKEND_URL}/api/assistant/plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new Error("Assistant is unavailable.");
   }
 
   return response.json();

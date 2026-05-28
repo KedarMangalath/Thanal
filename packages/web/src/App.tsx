@@ -1,5 +1,4 @@
 import {
-  analyzeRoute,
   calculateComfortScore,
   type ComfortScore as ComfortScoreType,
   type LatLng,
@@ -11,9 +10,10 @@ import {
   BookmarkPlus,
   Bus,
   Clock,
-  LocateFixed,
+  Sparkles,
   MapPin,
   Navigation,
+  Route,
   Search,
   Train,
   Trash2
@@ -26,20 +26,19 @@ import MapPicker from "./components/MapPicker";
 import RainWindow from "./components/RainWindow";
 import SunTimeline from "./components/SunTimeline";
 import {
-  fetchRoute,
+  fetchRouteOptions,
   fetchRailRoute,
   fetchSavedRoutes,
   fetchWeather,
+  askAssistant,
   deleteSavedRoute,
   saveRoute,
   searchPlaces,
   searchRailStations,
   type PlaceResult,
+  type RouteOption,
   type SavedRoute
 } from "./services/api";
-
-const SAMPLE_START: LatLng = { lat: 8.5241, lng: 76.9366 };
-const SAMPLE_END: LatLng = { lat: 10.5276, lng: 76.2144 };
 
 function toDateTimeLocal(date: Date): string {
   const offset = date.getTimezoneOffset() * 60000;
@@ -47,9 +46,11 @@ function toDateTimeLocal(date: Date): string {
 }
 
 export default function App() {
-  const [start, setStart] = useState<LatLng | null>(SAMPLE_START);
-  const [end, setEnd] = useState<LatLng | null>(SAMPLE_END);
+  const [start, setStart] = useState<LatLng | null>(null);
+  const [end, setEnd] = useState<LatLng | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
+  const [routeOptions, setRouteOptions] = useState<RouteOption[]>([]);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
   const [departureTime, setDepartureTime] = useState(toDateTimeLocal(new Date()));
@@ -60,6 +61,9 @@ export default function App() {
   const [placeQuery, setPlaceQuery] = useState("");
   const [placeTarget, setPlaceTarget] = useState<"start" | "end">("start");
   const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
+  const [assistantMessage, setAssistantMessage] = useState("Which option is most comfortable?");
+  const [assistantAnswer, setAssistantAnswer] = useState("");
+  const [isAssistantLoading, setIsAssistantLoading] = useState(false);
 
   const comfort = useMemo<ComfortScoreType | null>(() => {
     return weather ? calculateComfortScore(weather) : null;
@@ -88,25 +92,30 @@ export default function App() {
       const departure = new Date(departureTime);
       if (mode === "train") {
         const rail = await fetchRailRoute({ start, end, departureTime: departure.toISOString() });
+        const option = rail.options[0];
 
-        setRoute(rail.coordinates);
-        setAnalysis(rail.analysis);
+        setRoute(option?.coordinates ?? rail.coordinates);
+        setRouteOptions(rail.options);
+        setSelectedRouteId(option?.id ?? rail.recommendedOptionId);
+        setAnalysis(option?.analysis ?? rail.analysis);
         setWeather(await fetchWeather(start));
-        setStatus(`Train route: ${rail.from.name} to ${rail.to.name}. Confidence: ${rail.confidence}.`);
+        setStatus(`${rail.options.length} train route option${rail.options.length === 1 ? "" : "s"} found.`);
         return;
       }
 
-      const osrm = await fetchRoute(start, end);
-      const coordinates = osrm.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-      const routeAnalysis = analyzeRoute(coordinates, {
-        departureTime: departure,
-        averageSpeedKmh: Math.max(18, (osrm.distance / osrm.duration) * 3.6)
+      const response = await fetchRouteOptions({
+        start,
+        end,
+        departureTime: departure.toISOString()
       });
+      const option = response.options[0];
 
-      setRoute(coordinates);
-      setAnalysis(routeAnalysis);
+      setRoute(option?.coordinates ?? []);
+      setRouteOptions(response.options);
+      setSelectedRouteId(option?.id ?? response.recommendedOptionId);
+      setAnalysis(option?.analysis ?? null);
       setWeather(await fetchWeather(start));
-      setStatus("Route analyzed.");
+      setStatus(`${response.options.length} road route option${response.options.length === 1 ? "" : "s"} found.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not analyze this route.");
     } finally {
@@ -119,21 +128,28 @@ export default function App() {
       setStart(point);
       setEnd(null);
       setRoute([]);
+      setRouteOptions([]);
+      setSelectedRouteId(null);
       setAnalysis(null);
       setStatus("Start set. Tap the destination.");
       return;
     }
 
     setEnd(point);
+    setRouteOptions([]);
+    setSelectedRouteId(null);
     setStatus("Destination set. Analyze when ready.");
   }
 
-  function useSampleRoute() {
-    setStart(SAMPLE_START);
-    setEnd(SAMPLE_END);
+  function clearRoute() {
+    setStart(null);
+    setEnd(null);
     setRoute([]);
+    setRouteOptions([]);
+    setSelectedRouteId(null);
     setAnalysis(null);
-    setStatus("Sample Thiruvananthapuram to Thrissur route ready.");
+    setWeather(null);
+    setStatus("Route cleared. Search or tap a start point.");
   }
 
   async function saveCurrentRoute() {
@@ -187,6 +203,8 @@ export default function App() {
     }
 
     setRoute([]);
+    setRouteOptions([]);
+    setSelectedRouteId(null);
     setAnalysis(null);
     setPlaceResults([]);
     setPlaceQuery("");
@@ -203,11 +221,38 @@ export default function App() {
     }
   }
 
+  async function runAssistant() {
+    setIsAssistantLoading(true);
+    setAssistantAnswer("");
+
+    try {
+      const response = await askAssistant({
+        message: assistantMessage,
+        mode,
+        start,
+        end,
+        departureTime: new Date(departureTime).toISOString()
+      });
+      setAssistantAnswer(`${response.answer}\n\nModel: ${response.model}. Tools: ${response.toolTrace.length}.`);
+    } catch (error) {
+      setAssistantAnswer(error instanceof Error ? error.message : "Assistant failed.");
+    } finally {
+      setIsAssistantLoading(false);
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="workspace">
         <div className="map-region">
-          <MapPicker start={start} end={end} route={route} onPick={handleMapPick} />
+          <MapPicker
+            start={start}
+            end={end}
+            route={route}
+            routes={routeOptions}
+            activeRouteId={selectedRouteId}
+            onPick={handleMapPick}
+          />
         </div>
 
         <aside className="control-panel">
@@ -313,9 +358,8 @@ export default function App() {
           </div>
 
           <div className="action-row">
-            <button className="secondary" type="button" onClick={useSampleRoute}>
-              <LocateFixed size={16} />
-              Sample
+            <button className="secondary" type="button" onClick={clearRoute}>
+              Clear
             </button>
             <button className="secondary" type="button" onClick={saveCurrentRoute}>
               <BookmarkPlus size={16} />
@@ -328,6 +372,61 @@ export default function App() {
           </div>
 
           <p className="status-line">{status}</p>
+
+          {routeOptions.length > 0 ? (
+            <section className="route-options">
+              <div className="section-heading">
+                <span>
+                  <Route size={16} />
+                  Route options
+                </span>
+                <strong>{routeOptions.length}</strong>
+              </div>
+              {routeOptions.map((option) => (
+                <button
+                  className={`route-option ${selectedRouteId === option.id ? "active" : ""}`}
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRouteId(option.id);
+                    setRoute(option.coordinates);
+                    setAnalysis(option.analysis);
+                  }}
+                >
+                  <span>{option.label}</span>
+                  <strong>{Math.round(option.analysis.totalDurationMinutes)} min</strong>
+                  <small>
+                    {(option.analysis.totalDistanceMeters / 1000).toFixed(1)} km ·{" "}
+                    {formatSeat(option.analysis.recommendedSeat)}
+                  </small>
+                </button>
+              ))}
+            </section>
+          ) : null}
+
+          <section className="assistant-card">
+            <div className="section-heading">
+              <span>
+                <Sparkles size={16} />
+                Ask Thanal
+              </span>
+            </div>
+            <div className="assistant-row">
+              <input
+                aria-label="Ask Thanal"
+                value={assistantMessage}
+                onChange={(event) => setAssistantMessage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void runAssistant();
+                }}
+              />
+              <button className="primary icon-button" type="button" onClick={runAssistant}>
+                <Sparkles size={17} />
+              </button>
+            </div>
+            {isAssistantLoading ? <p className="assistant-answer">Thinking with route tools...</p> : null}
+            {assistantAnswer ? <p className="assistant-answer">{assistantAnswer}</p> : null}
+          </section>
 
           {analysis ? (
             <>
