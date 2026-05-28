@@ -76,16 +76,26 @@ export function planRailRoute(input: {
   const options = railCorridors
     .map((corridor) => buildCorridorOption(corridor, nearest.code, target.code, input))
     .filter((option) => option !== null);
+  const recommended = options
+    .map((option) => ({
+      option,
+      score:
+        option.analysis.directSunMinutesBySide.left +
+        option.analysis.directSunMinutesBySide.right +
+        option.analysis.glareWindows.length * 8 +
+        option.analysis.totalDurationMinutes * 0.1
+    }))
+    .sort((a, b) => a.score - b.score)[0]?.option;
 
   return {
     source: "kerala-seeded-rail-corridors",
     from: nearest,
     to: target,
     options,
-    recommendedOptionId: options[0]?.id,
-    coordinates: options[0]?.coordinates ?? [],
-    stations: options[0]?.stations ?? [],
-    analysis: options[0]?.analysis,
+    recommendedOptionId: recommended?.id,
+    coordinates: recommended?.coordinates ?? [],
+    stations: recommended?.stations ?? [],
+    analysis: recommended?.analysis,
     confidence: nearest.code === target.code ? "low" : options.length > 1 ? "medium" : "low"
   };
 }

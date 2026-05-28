@@ -6,10 +6,14 @@ type Props = {
   start: LatLng | null;
   end: LatLng | null;
   route: LatLng[];
+  routes?: Array<{ id: string; coordinates: LatLng[] }>;
+  activeRouteId?: string | null;
   onPick: (point: LatLng) => void;
 };
 
-export default function MapPicker({ start, end, route, onPick }: Props) {
+export default function MapPicker({ start, end, route, routes = [], activeRouteId, onPick }: Props) {
+  const visibleRoutes = routes.length > 0 ? routes : route.length > 1 ? [{ id: "route", coordinates: route }] : [];
+
   return (
     <MapView
       style={styles.map}
@@ -26,16 +30,20 @@ export default function MapPicker({ start, end, route, onPick }: Props) {
         })
       }
     >
-      {route.length > 1 ? (
+      {visibleRoutes.map((candidate) => {
+        const isActive = !activeRouteId || candidate.id === activeRouteId;
+        return (
         <Polyline
-          coordinates={route.map((point) => ({
+          key={candidate.id}
+          coordinates={candidate.coordinates.map((point) => ({
             latitude: point.lat,
             longitude: point.lng
           }))}
-          strokeColor="#0f766e"
-          strokeWidth={5}
+          strokeColor={isActive ? "#5b35f0" : "#8fb8ff"}
+          strokeWidth={isActive ? 6 : 4}
         />
-      ) : null}
+        );
+      })}
       {start ? (
         <Marker
           coordinate={{ latitude: start.lat, longitude: start.lng }}

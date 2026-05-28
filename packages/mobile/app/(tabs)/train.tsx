@@ -2,19 +2,23 @@ import type { LatLng, RouteAnalysis } from "@thanal/shared";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import ComfortScore from "../../components/ComfortScore";
+import AssistantCard from "../../components/AssistantCard";
 import MapPicker from "../../components/MapPicker";
 import PlaceSearch from "../../components/PlaceSearch";
 import RainWindow from "../../components/RainWindow";
+import RouteOptions from "../../components/RouteOptions";
 import SeatRecommendation from "../../components/SeatRecommendation";
 import SunTimeline from "../../components/SunTimeline";
 import { useComfortScore } from "../../hooks/useComfortScore";
 import { useWeather } from "../../hooks/useWeather";
-import { fetchRailRoute, searchRailStations } from "../../utils/api";
+import { fetchRailRoute, searchRailStations, type RouteOption } from "../../utils/api";
 
 export default function TrainScreen() {
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
+  const [options, setOptions] = useState<RouteOption[]>([]);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
   const [status, setStatus] = useState("Search railway stations or tap the map.");
   const weather = useWeather();
@@ -26,6 +30,8 @@ export default function TrainScreen() {
       setEnd(null);
       setAnalysis(null);
       setRoute([]);
+      setOptions([]);
+      setSelectedRouteId(null);
       setStatus("Start set. Pick destination station.");
       return;
     }
@@ -57,8 +63,12 @@ export default function TrainScreen() {
         departureTime: new Date().toISOString()
       });
 
-      setRoute(rail.coordinates);
-      setAnalysis(rail.analysis);
+      const option =
+        rail.options.find((candidate) => candidate.id === rail.recommendedOptionId) ?? rail.options[0];
+      setOptions(rail.options);
+      setSelectedRouteId(option?.id ?? rail.recommendedOptionId ?? null);
+      setRoute(option?.coordinates ?? rail.coordinates);
+      setAnalysis(option?.analysis ?? rail.analysis);
       await weather.fetchWeather(start);
       setStatus(`${rail.from.name} to ${rail.to.name}. Confidence: ${rail.confidence}.`);
     } catch {
@@ -71,13 +81,30 @@ export default function TrainScreen() {
       <Text style={styles.title}>Train seat picker</Text>
       <PlaceSearch label="Boarding station" searcher={searchRailStations} onSelect={selectStart} />
       <PlaceSearch label="Destination station" searcher={searchRailStations} onSelect={selectEnd} />
-      <MapPicker start={start} end={end} route={route} onPick={onPick} />
+      <MapPicker
+        start={start}
+        end={end}
+        route={route}
+        routes={options}
+        activeRouteId={selectedRouteId}
+        onPick={onPick}
+      />
 
       <Text style={styles.status}>{status}</Text>
 
       <Pressable style={styles.button} onPress={analyzeTrain}>
         <Text style={styles.buttonText}>Analyze train sun side</Text>
       </Pressable>
+
+      <RouteOptions
+        options={options}
+        selectedId={selectedRouteId}
+        onSelect={(option) => {
+          setSelectedRouteId(option.id);
+          setRoute(option.coordinates);
+          setAnalysis(option.analysis);
+        }}
+      />
 
       {analysis ? (
         <>
@@ -92,6 +119,7 @@ export default function TrainScreen() {
           ) : null}
         </>
       ) : null}
+      <AssistantCard mode="train" start={start} end={end} />
     </ScrollView>
   );
 }

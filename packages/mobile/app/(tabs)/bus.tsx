@@ -1,25 +1,31 @@
-import { analyzeRoute, type LatLng, type RouteAnalysis } from "@thanal/shared";
+import type { LatLng, RouteAnalysis } from "@thanal/shared";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MapPicker from "../../components/MapPicker";
+import AssistantCard from "../../components/AssistantCard";
 import PlaceSearch from "../../components/PlaceSearch";
 import SeatRecommendation from "../../components/SeatRecommendation";
 import SunTimeline from "../../components/SunTimeline";
-import { useRoute } from "../../hooks/useRoute";
 import { useWeather } from "../../hooks/useWeather";
 import { useComfortScore } from "../../hooks/useComfortScore";
 import ComfortScore from "../../components/ComfortScore";
 import RainWindow from "../../components/RainWindow";
+import RouteOptions from "../../components/RouteOptions";
+import { fetchRouteOptions, type RouteOption } from "../../utils/api";
 
 export default function BusScreen() {
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
   const [startName, setStartName] = useState("Tap map");
   const [endName, setEndName] = useState("Tap map");
-  const route = useRoute();
   const weather = useWeather();
   const comfort = useComfortScore(weather.weather);
   const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
+  const [options, setOptions] = useState<RouteOption[]>([]);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<LatLng[]>([]);
+  const [isRouting, setIsRouting] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
 
   function onPick(point: LatLng) {
     if (!start || (start && end)) {
@@ -28,38 +34,69 @@ export default function BusScreen() {
       setEnd(null);
       setEndName("Tap map");
       setAnalysis(null);
-      route.reset();
+      setOptions([]);
+      setSelectedRouteId(null);
+      setRouteCoordinates([]);
+      setRouteError(null);
       return;
     }
 
     setEnd(point);
     setEndName("Map point");
+    setOptions([]);
+    setSelectedRouteId(null);
+    setRouteCoordinates([]);
+    setRouteError(null);
   }
 
   function selectStart(point: LatLng, name: string) {
     setStart(point);
     setStartName(name);
     setAnalysis(null);
-    route.reset();
+    setOptions([]);
+    setSelectedRouteId(null);
+    setRouteCoordinates([]);
+    setRouteError(null);
   }
 
   function selectEnd(point: LatLng, name: string) {
     setEnd(point);
     setEndName(name);
     setAnalysis(null);
-    route.reset();
+    setOptions([]);
+    setSelectedRouteId(null);
+    setRouteCoordinates([]);
+    setRouteError(null);
   }
 
   async function analyzeTappedRoute() {
     if (!start || !end) return;
-    const routed = await route.fetchRoute(start, end);
-    const averageSpeedKmh =
-      routed.distanceMeters && routed.durationSeconds
-        ? Math.max(18, (routed.distanceMeters / routed.durationSeconds) * 3.6)
-        : 34;
+    setIsRouting(true);
+    setRouteError(null);
 
-    setAnalysis(analyzeRoute(routed.coordinates, { departureTime: new Date(), averageSpeedKmh }));
-    await weather.fetchWeather(start);
+    try {
+      const response = await fetchRouteOptions({
+        start,
+        end,
+        departureTime: new Date().toISOString()
+      });
+      const option =
+        response.options.find((candidate) => candidate.id === response.recommendedOptionId) ??
+        response.options[0];
+
+      setOptions(response.options);
+      setSelectedRouteId(option?.id ?? response.recommendedOptionId ?? null);
+      setRouteCoordinates(option?.coordinates ?? []);
+      setAnalysis(option?.analysis ?? null);
+      await weather.fetchWeather(start);
+    } catch (error) {
+      setRouteError(error instanceof Error ? error.message : "Road route failed.");
+      setOptions([]);
+      setRouteCoordinates([]);
+      setAnalysis(null);
+    } finally {
+      setIsRouting(false);
+    }
   }
 
   return (
@@ -67,7 +104,14 @@ export default function BusScreen() {
       <Text style={styles.title}>Bus seat picker</Text>
       <PlaceSearch label="Start" onSelect={selectStart} />
       <PlaceSearch label="Destination" onSelect={selectEnd} />
-      <MapPicker start={start} end={end} route={route.coordinates} onPick={onPick} />
+      <MapPicker
+        start={start}
+        end={end}
+        route={routeCoordinates}
+        routes={options}
+        activeRouteId={selectedRouteId}
+        onPick={onPick}
+      />
 
       <View style={styles.pointPanel}>
         <Point label="Start" point={start} name={startName} />
@@ -76,12 +120,21 @@ export default function BusScreen() {
 
       <Pressable style={styles.button} onPress={analyzeTappedRoute}>
         <Text style={styles.buttonText}>
-          {route.isLoading ? "Routing roads..." : "Analyze sun exposure"}
+          {isRouting ? "Routing roads..." : "Analyze sun exposure"}
         </Text>
       </Pressable>
 
-      {route.error ? <Text style={styles.warning}>{route.error} Using a direct line fallback.</Text> : null}
+      {routeError ? <Text style={styles.warning}>{routeError}</Text> : null}
       {weather.error ? <Text style={styles.warning}>{weather.error}</Text> : null}
+      <RouteOptions
+        options={options}
+        selectedId={selectedRouteId}
+        onSelect={(option) => {
+          setSelectedRouteId(option.id);
+          setRouteCoordinates(option.coordinates);
+          setAnalysis(option.analysis);
+        }}
+      />
 
       {analysis ? (
         <>
@@ -96,6 +149,7 @@ export default function BusScreen() {
           ) : null}
         </>
       ) : null}
+      <AssistantCard mode="bus" start={start} end={end} />
     </ScrollView>
   );
 }

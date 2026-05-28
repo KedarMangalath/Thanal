@@ -35,10 +35,20 @@ router.get("/", async (request, response, next) => {
         })
       };
     });
+    const recommended = options
+      .map((option) => ({
+        option,
+        score:
+          option.analysis.directSunMinutesBySide.left +
+          option.analysis.directSunMinutesBySide.right +
+          option.analysis.glareWindows.length * 8 +
+          option.analysis.totalDurationMinutes * 0.15
+      }))
+      .sort((a, b) => a.score - b.score)[0]?.option;
 
     response.json({
       options,
-      recommendedOptionId: options[0]?.id
+      recommendedOptionId: recommended?.id
     });
   } catch (error) {
     next(error);

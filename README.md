@@ -1,14 +1,14 @@
-# Thanal — Sun & Comfort-Aware Travel Assistant
+# Thanal - Sun & Comfort-Aware Travel Assistant
 
 > *Thanal* means shade in Malayalam. Because sometimes the best feature a navigation app can have is knowing when to get out of the sun.
 
-Thanal is a Kerala-first travel comfort assistant. It tells commuters which side of a bus or train to sit on to avoid harsh sun, warns riders about glare and rain risk, and scores a route by heat, UV, humidity, and exposure.
+Thanal is a Kerala-first travel comfort assistant. It tells commuters which side of a bus or train to sit on to avoid harsh sun, shows multiple road or rail route options, warns riders about glare and rain risk, and scores a route by heat, UV, humidity, and exposure.
 
 ## The Story
 
-I came across an app called Veyil while planning a long bus trip from Thiruvananthapuram to my hometown Perinthalmanna. The idea immediately clicked — it tells you which side of the bus to sit on to avoid the sun. Brilliant concept, especially for Kerala where the sun is genuinely brutal for most of the year. I used it, trusted it, sat on the recommended side, and spent the next four hours getting absolutely cooked through the window while the other side stayed perfectly shaded. That was enough motivation.
+I came across an app called Veyil while planning a long bus trip from Thiruvananthapuram to my hometown Perinthalmanna. The idea immediately clicked - it tells you which side of the bus to sit on to avoid the sun. Brilliant concept, especially for Kerala where the sun is genuinely brutal for most of the year. I used it, trusted it, sat on the recommended side, and spent the next four hours getting absolutely cooked through the window while the other side stayed perfectly shaded. That was enough motivation.
 
-Thanal is my attempt at building this properly — a travel companion that actually understands what it means to travel in Kerala. The heat, the monsoon, the narrow shaded roads, the flooding underpasses, the temple processions blocking highways. Not a generic global app that happens to have Kerala on its map.
+Thanal is my attempt at building this properly - a travel companion that actually understands what it means to travel in Kerala. The heat, the monsoon, the narrow shaded roads, the flooding underpasses, the temple processions blocking highways. Not a generic global app that happens to have Kerala on its map.
 
 ## Current Features
 
@@ -16,14 +16,15 @@ Thanal is my attempt at building this properly — a travel companion that actua
 - Expo Go mobile app using Expo SDK 54
 - Tap-to-select start and destination points
 - Place search through the backend Nominatim proxy
-- OSRM road routing with route polyline display
-- Train mode with station search, route options, and rail-side sun analysis
+- OSRM road routing with multiple route options, text cards, and map polylines
+- Train mode with station search, coastal and Kottayam-side rail route options, and rail-side sun analysis
 - SunCalc-based segment analysis for sun side, seat recommendation, glare, and timeline exposure
 - Open-Meteo weather lookup for UV, humidity, temperature, and rain probability
 - Real rain-window strip from hourly forecast data
 - Comfort score from weather conditions
+- Gemini-backed Thanal AI assistant for route explanations, with deterministic fallback when the key is missing
 - Saved commutes on web and mobile through the backend
-- Backend routes for routing, rail, weather, places, saved routes, and community reports
+- Backend routes for routing, rail, weather, places, saved routes, assistant, and community reports
 
 ## Tech Stack
 
@@ -33,10 +34,11 @@ Thanal is my attempt at building this properly — a travel companion that actua
 | Web | React + Vite |
 | Maps | Leaflet, React Native Maps, OpenStreetMap |
 | Road Routing | OSRM public API |
-| Rail Routing | Kerala railway station route engine |
+| Rail Routing | Kerala railway station and corridor engine |
 | Place Search | Nominatim proxy |
 | Sun Math | SunCalc.js |
 | Weather | Open-Meteo |
+| GenAI | Gemini API, optional through `backend/.env` |
 | Backend | Node.js + Express |
 | Database | SQLite through Node `node:sqlite` |
 
@@ -46,14 +48,19 @@ Thanal is my attempt at building this properly — a travel companion that actua
 - npm
 - Git
 - Expo Go 54 on Android or iOS for mobile testing
-- Internet access for OSRM, Open-Meteo, Nominatim, and map tiles
-
-No paid API keys are required for the current app. GenAI integration can be added behind an optional API key.
+- Internet access for OSRM, Open-Meteo, Nominatim, Gemini, and map tiles
+- Optional: `GEMINI_API_KEY` in `backend/.env` for AI answers
 
 ## Setup
 
 ```powershell
 npm install
+```
+
+Create `backend/.env` if you want Gemini responses:
+
+```text
+GEMINI_API_KEY=your_key_here
 ```
 
 ## Run Locally
@@ -110,7 +117,7 @@ npm.cmd run build -w @thanal/web
 backend/
   src/
     routes/        Express route handlers
-    services/      OSRM and future rail integration helpers
+    services/      OSRM, rail, and API helpers
     db/            SQLite schema and connection
 
 packages/
@@ -125,7 +132,7 @@ docs/              Screenshots and demo assets
 ## Notes
 
 - The backend uses Node's built-in `node:sqlite` module to avoid native npm compilation on Windows and Node 24.
-- If the backend cannot reach OSRM, saved commute refresh falls back to direct-line route analysis instead of failing.
+- If Gemini is not configured or unavailable, the assistant returns a deterministic route-tool summary instead of failing the flow.
 - `better-sqlite3` was intentionally avoided for now because Node 24 did not have a prebuilt binary on this machine and required Visual Studio C++ build tools.
 
 ## One-Line Pitch

@@ -16,11 +16,26 @@ export type PlaceResult = {
 export type RailRoute = {
   source: string;
   confidence: "low" | "medium" | "high";
+  options: RouteOption[];
+  recommendedOptionId?: string;
   coordinates: LatLng[];
   stations: Array<LatLng & { code: string; name: string }>;
   from: LatLng & { code: string; name: string };
   to: LatLng & { code: string; name: string };
   analysis: RouteAnalysis;
+};
+
+export type RouteOption = {
+  id: string;
+  label: string;
+  serviceHint?: string;
+  coordinates: LatLng[];
+  analysis: RouteAnalysis;
+};
+
+export type RouteOptionsResponse = {
+  options: RouteOption[];
+  recommendedOptionId?: string;
 };
 
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
@@ -61,6 +76,44 @@ export async function fetchRailRoute(input: {
 
   if (!response.ok) {
     throw new Error("Rail route is unavailable.");
+  }
+
+  return response.json();
+}
+
+export async function fetchRouteOptions(input: {
+  start: LatLng;
+  end: LatLng;
+  departureTime: string;
+}): Promise<RouteOptionsResponse> {
+  const url = new URL(`${API_BASE_URL}/api/route`);
+  url.searchParams.set("start", `${input.start.lat},${input.start.lng}`);
+  url.searchParams.set("end", `${input.end.lat},${input.end.lng}`);
+  url.searchParams.set("departureTime", input.departureTime);
+
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    throw new Error("Road route is unavailable.");
+  }
+
+  return response.json();
+}
+
+export async function askAssistant(input: {
+  message: string;
+  mode: "bus" | "bike" | "walk" | "train";
+  start: LatLng | null;
+  end: LatLng | null;
+  departureTime: string;
+}): Promise<{ answer: string; model: string; toolTrace: unknown[] }> {
+  const response = await fetch(`${API_BASE_URL}/api/assistant/plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new Error("Assistant is unavailable.");
   }
 
   return response.json();

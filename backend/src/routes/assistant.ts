@@ -14,8 +14,8 @@ const latLngSchema = z.object({
 const requestSchema = z.object({
   message: z.string().min(2),
   mode: z.enum(["bus", "bike", "walk", "train"]).default("bus"),
-  start: latLngSchema.optional(),
-  end: latLngSchema.optional(),
+  start: latLngSchema.nullish(),
+  end: latLngSchema.nullish(),
   departureTime: z.string().datetime().optional()
 });
 
@@ -25,8 +25,8 @@ router.post("/plan", async (request, response, next) => {
     const departureTime = body.departureTime ? new Date(body.departureTime) : new Date();
     const toolTrace = await runAssistantTools({
       mode: body.mode,
-      start: body.start,
-      end: body.end,
+      start: body.start ?? undefined,
+      end: body.end ?? undefined,
       departureTime
     });
 

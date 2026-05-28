@@ -92,7 +92,8 @@ export default function App() {
       const departure = new Date(departureTime);
       if (mode === "train") {
         const rail = await fetchRailRoute({ start, end, departureTime: departure.toISOString() });
-        const option = rail.options[0];
+        const option =
+          rail.options.find((candidate) => candidate.id === rail.recommendedOptionId) ?? rail.options[0];
 
         setRoute(option?.coordinates ?? rail.coordinates);
         setRouteOptions(rail.options);
@@ -108,7 +109,9 @@ export default function App() {
         end,
         departureTime: departure.toISOString()
       });
-      const option = response.options[0];
+      const option =
+        response.options.find((candidate) => candidate.id === response.recommendedOptionId) ??
+        response.options[0];
 
       setRoute(option?.coordinates ?? []);
       setRouteOptions(response.options);

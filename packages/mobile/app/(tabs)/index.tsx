@@ -1,6 +1,5 @@
 import { Link } from "expo-router";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import ComfortScore from "../../components/ComfortScore";
 
 const brandText = require("../../../../assets/Thanal_text_png.png");
 const brandLogo = require("../../../../assets/Thanal_Logo.png");
@@ -23,8 +22,6 @@ export default function HomeScreen() {
       <Link href="/bus" style={styles.primaryLink}>
         Start bus seat picker
       </Link>
-
-      <ComfortScore score={68} label="warm" />
     </ScrollView>
   );
 }
