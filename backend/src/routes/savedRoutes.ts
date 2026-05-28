@@ -9,7 +9,7 @@ const router = Router();
 const savedRouteSchema = z.object({
   userId: z.number().int().positive().optional(),
   name: z.string().min(2),
-  mode: z.enum(["bus", "bike", "walk"]),
+  mode: z.enum(["bus", "bike", "walk", "train"]),
   start: z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180)
@@ -56,7 +56,8 @@ router.get("/:id/refresh", async (request, response, next) => {
 
     const start = { lat: route.startLat, lng: route.startLng };
     const end = { lat: route.endLat, lng: route.endLng };
-    const fallbackAverageSpeedKmh = route.mode === "walk" ? 5 : route.mode === "bike" ? 24 : 34;
+    const fallbackAverageSpeedKmh =
+      route.mode === "walk" ? 5 : route.mode === "bike" ? 24 : route.mode === "train" ? 48 : 34;
     let coordinates = [start, end];
     let averageSpeedKmh = fallbackAverageSpeedKmh;
     let roadRoute = null;
@@ -126,7 +127,7 @@ type SavedRouteRow = {
   id: number;
   userId: number | null;
   name: string;
-  mode: "bus" | "bike" | "walk";
+  mode: "bus" | "bike" | "walk" | "train";
   startLat: number;
   startLng: number;
   endLat: number;

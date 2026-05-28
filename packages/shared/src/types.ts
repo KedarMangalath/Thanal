@@ -3,7 +3,7 @@ export type LatLng = {
   lng: number;
 };
 
-export type TravelMode = "bus" | "bike" | "walk";
+export type TravelMode = "bus" | "bike" | "walk" | "train";
 
 export type VehicleSide = "left" | "right" | "front" | "behind" | "none";
 

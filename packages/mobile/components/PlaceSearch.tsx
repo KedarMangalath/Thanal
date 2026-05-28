@@ -13,9 +13,10 @@ import { searchPlaces, type PlaceResult } from "../utils/api";
 type Props = {
   label: string;
   onSelect: (point: LatLng, name: string) => void;
+  searcher?: (query: string) => Promise<PlaceResult[]>;
 };
 
-export default function PlaceSearch({ label, onSelect }: Props) {
+export default function PlaceSearch({ label, onSelect, searcher = searchPlaces }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +33,7 @@ export default function PlaceSearch({ label, onSelect }: Props) {
     setIsLoading(true);
     setError(null);
     try {
-      setResults(await searchPlaces(trimmed));
+      setResults(await searcher(trimmed));
     } catch (searchError) {
       setError(searchError instanceof Error ? searchError.message : "Search failed.");
       setResults([]);

@@ -6,7 +6,18 @@ import {
   type RouteAnalysis,
   type WeatherSnapshot
 } from "@thanal/shared";
-import { Bike, BookmarkPlus, Bus, Clock, LocateFixed, MapPin, Navigation, Search, Trash2 } from "lucide-react";
+import {
+  Bike,
+  BookmarkPlus,
+  Bus,
+  Clock,
+  LocateFixed,
+  MapPin,
+  Navigation,
+  Search,
+  Train,
+  Trash2
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import brandLogoUrl from "../../../assets/Thanal_Logo.png";
 import brandTextUrl from "../../../assets/Thanal_text_png.png";
@@ -16,11 +27,13 @@ import RainWindow from "./components/RainWindow";
 import SunTimeline from "./components/SunTimeline";
 import {
   fetchRoute,
+  fetchRailRoute,
   fetchSavedRoutes,
   fetchWeather,
   deleteSavedRoute,
   saveRoute,
   searchPlaces,
+  searchRailStations,
   type PlaceResult,
   type SavedRoute
 } from "./services/api";
@@ -41,6 +54,7 @@ export default function App() {
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
   const [departureTime, setDepartureTime] = useState(toDateTimeLocal(new Date()));
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<"bus" | "bike" | "walk" | "train">("bus");
   const [status, setStatus] = useState("Tap the map to adjust start and destination.");
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
   const [placeQuery, setPlaceQuery] = useState("");
@@ -64,13 +78,28 @@ export default function App() {
     }
 
     setIsLoading(true);
-    setStatus("Fetching road route and checking the sun angle.");
+    setStatus(
+      mode === "train"
+        ? "Finding the rail route and checking the sun angle."
+        : "Fetching road route and checking the sun angle."
+    );
 
     try {
+      const departure = new Date(departureTime);
+      if (mode === "train") {
+        const rail = await fetchRailRoute({ start, end, departureTime: departure.toISOString() });
+
+        setRoute(rail.coordinates);
+        setAnalysis(rail.analysis);
+        setWeather(await fetchWeather(start));
+        setStatus(`Train route: ${rail.from.name} to ${rail.to.name}. Confidence: ${rail.confidence}.`);
+        return;
+      }
+
       const osrm = await fetchRoute(start, end);
       const coordinates = osrm.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
       const routeAnalysis = analyzeRoute(coordinates, {
-        departureTime: new Date(departureTime),
+        departureTime: departure,
         averageSpeedKmh: Math.max(18, (osrm.distance / osrm.duration) * 3.6)
       });
 
@@ -119,7 +148,7 @@ export default function App() {
           hour: "2-digit",
           minute: "2-digit"
         })}`,
-        mode: "bus",
+        mode,
         start,
         end,
         departureTime: new Date(departureTime).toISOString()
@@ -139,8 +168,10 @@ export default function App() {
     }
 
     try {
-      setStatus("Searching places in India.");
-      setPlaceResults(await searchPlaces(placeQuery));
+      setStatus(mode === "train" ? "Searching railway stations." : "Searching places in India.");
+      setPlaceResults(
+        mode === "train" ? await searchRailStations(placeQuery) : await searchPlaces(placeQuery)
+      );
     } catch (error) {
       setPlaceResults([]);
       setStatus(error instanceof Error ? error.message : "Place search failed.");
@@ -191,13 +222,29 @@ export default function App() {
           </div>
 
           <div className="mode-tabs" aria-label="Travel mode">
-            <button className="active" type="button">
+            <button
+              className={mode === "bus" ? "active" : ""}
+              type="button"
+              onClick={() => setMode("bus")}
+            >
               <Bus size={16} />
               Bus
             </button>
-            <button type="button">
+            <button
+              className={mode === "bike" ? "active" : ""}
+              type="button"
+              onClick={() => setMode("bike")}
+            >
               <Bike size={16} />
               Ride
+            </button>
+            <button
+              className={mode === "train" ? "active" : ""}
+              type="button"
+              onClick={() => setMode("train")}
+            >
+              <Train size={16} />
+              Train
             </button>
           </div>
 
@@ -325,7 +372,11 @@ export default function App() {
           ) : (
             <section className="empty-state">
               <MapPin size={22} />
-              <p>Tap two map points, set your departure time, and run the sun analysis.</p>
+              <p>
+                {mode === "train"
+                  ? "Search two railway stations, set your departure time, and run the sun analysis."
+                  : "Tap two map points, set your departure time, and run the sun analysis."}
+              </p>
             </section>
           )}
 

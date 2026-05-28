@@ -1,4 +1,4 @@
-import type { LatLng, RainBucket, WeatherSnapshot } from "@thanal/shared";
+import type { LatLng, RainBucket, RouteAnalysis, WeatherSnapshot } from "@thanal/shared";
 
 const BACKEND_URL = "http://localhost:4010";
 
@@ -13,12 +13,22 @@ export type OsrmRoute = {
 export type SavedRoute = {
   id: number;
   name: string;
-  mode: "bus" | "bike" | "walk";
+  mode: "bus" | "bike" | "walk" | "train";
   startLat: number;
   startLng: number;
   endLat: number;
   endLng: number;
   departureTime: string | null;
+};
+
+export type RailRoute = {
+  source: string;
+  confidence: "low" | "medium" | "high";
+  coordinates: LatLng[];
+  stations: Array<LatLng & { code: string; name: string }>;
+  from: LatLng & { code: string; name: string };
+  to: LatLng & { code: string; name: string };
+  analysis: RouteAnalysis;
 };
 
 export type PlaceResult = {
@@ -88,7 +98,7 @@ export async function fetchSavedRoutes(): Promise<SavedRoute[]> {
 
 export async function saveRoute(input: {
   name: string;
-  mode: "bus" | "bike" | "walk";
+  mode: "bus" | "bike" | "walk" | "train";
   start: LatLng;
   end: LatLng;
   departureTime: string;
@@ -101,6 +111,36 @@ export async function saveRoute(input: {
 
   if (!response.ok) {
     throw new Error("Could not save route.");
+  }
+
+  return response.json();
+}
+
+export async function fetchRailRoute(input: {
+  start: LatLng;
+  end: LatLng;
+  departureTime: string;
+}): Promise<RailRoute> {
+  const response = await fetch(`${BACKEND_URL}/api/rail/route`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new Error("Rail route is unavailable.");
+  }
+
+  return response.json();
+}
+
+export async function searchRailStations(query: string): Promise<PlaceResult[]> {
+  const url = new URL(`${BACKEND_URL}/api/rail/stations`);
+  url.searchParams.set("q", query);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Rail station search is unavailable.");
   }
 
   return response.json();

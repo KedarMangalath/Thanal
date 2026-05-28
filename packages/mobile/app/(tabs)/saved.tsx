@@ -7,7 +7,7 @@ import { API_BASE_URL, deleteSavedRoute } from "../../utils/api";
 type SavedRoute = {
   id: number;
   name: string;
-  mode: "bus" | "bike" | "walk";
+  mode: "bus" | "bike" | "walk" | "train";
   startLat: number;
   startLng: number;
   endLat: number;
