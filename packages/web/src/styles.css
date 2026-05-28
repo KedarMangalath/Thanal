@@ -171,6 +171,72 @@ input {
   width: 100%;
 }
 
+.search-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.segmented-control {
+  background: #e9efec;
+  border: 1px solid #d4ddd8;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+}
+
+.segmented-control button {
+  background: transparent;
+  color: #4d5b55;
+  min-height: 34px;
+}
+
+.segmented-control .active {
+  background: #ffffff;
+  box-shadow: 0 1px 5px rgba(24, 39, 35, 0.12);
+  color: #14211d;
+}
+
+.search-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.icon-button {
+  min-height: 42px;
+  padding: 0;
+}
+
+.place-results {
+  background: #ffffff;
+  border: 1px solid #d7e0db;
+  border-radius: 8px;
+  display: grid;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.place-result {
+  background: transparent;
+  border-radius: 0;
+  color: #17211f;
+  display: block;
+  font-size: 13px;
+  justify-content: flex-start;
+  min-height: 40px;
+  overflow: hidden;
+  padding: 10px 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-result + .place-result {
+  border-top: 1px solid #edf2f0;
+}
+
 .point-list {
   border: 1px solid #d7e0db;
   border-radius: 8px;

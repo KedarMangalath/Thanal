@@ -6,13 +6,31 @@ import {
   type RouteAnalysis,
   type WeatherSnapshot
 } from "@thanal/shared";
-import { Bike, BookmarkPlus, Bus, Clock, LocateFixed, MapPin, Navigation, Sun } from "lucide-react";
+import {
+  Bike,
+  BookmarkPlus,
+  Bus,
+  Clock,
+  LocateFixed,
+  MapPin,
+  Navigation,
+  Search,
+  Sun
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ComfortScore from "./components/ComfortScore";
 import MapPicker from "./components/MapPicker";
 import RainWindow from "./components/RainWindow";
 import SunTimeline from "./components/SunTimeline";
-import { fetchRoute, fetchSavedRoutes, fetchWeather, saveRoute, type SavedRoute } from "./services/api";
+import {
+  fetchRoute,
+  fetchSavedRoutes,
+  fetchWeather,
+  saveRoute,
+  searchPlaces,
+  type PlaceResult,
+  type SavedRoute
+} from "./services/api";
 
 const SAMPLE_START: LatLng = { lat: 8.5241, lng: 76.9366 };
 const SAMPLE_END: LatLng = { lat: 10.5276, lng: 76.2144 };
@@ -32,6 +50,9 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState("Tap the map to adjust start and destination.");
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [placeTarget, setPlaceTarget] = useState<"start" | "end">("start");
+  const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
 
   const comfort = useMemo<ComfortScoreType | null>(() => {
     return weather ? calculateComfortScore(weather) : null;
@@ -118,6 +139,36 @@ export default function App() {
     }
   }
 
+  async function runPlaceSearch() {
+    if (placeQuery.trim().length < 2) {
+      setStatus("Type at least two characters to search.");
+      return;
+    }
+
+    try {
+      setStatus("Searching places in India.");
+      setPlaceResults(await searchPlaces(placeQuery));
+    } catch (error) {
+      setPlaceResults([]);
+      setStatus(error instanceof Error ? error.message : "Place search failed.");
+    }
+  }
+
+  function selectPlace(place: PlaceResult) {
+    const point = { lat: Number(place.lat), lng: Number(place.lon) };
+    if (placeTarget === "start") {
+      setStart(point);
+    } else {
+      setEnd(point);
+    }
+
+    setRoute([]);
+    setAnalysis(null);
+    setPlaceResults([]);
+    setPlaceQuery("");
+    setStatus(`${placeTarget === "start" ? "Start" : "Destination"} set from search.`);
+  }
+
   return (
     <main className="app-shell">
       <section className="workspace">
@@ -158,6 +209,53 @@ export default function App() {
               onChange={(event) => setDepartureTime(event.target.value)}
             />
           </label>
+
+          <section className="search-panel">
+            <div className="segmented-control" aria-label="Search target">
+              <button
+                className={placeTarget === "start" ? "active" : ""}
+                type="button"
+                onClick={() => setPlaceTarget("start")}
+              >
+                Start
+              </button>
+              <button
+                className={placeTarget === "end" ? "active" : ""}
+                type="button"
+                onClick={() => setPlaceTarget("end")}
+              >
+                End
+              </button>
+            </div>
+            <div className="search-row">
+              <input
+                aria-label="Place search"
+                placeholder="Search place"
+                value={placeQuery}
+                onChange={(event) => setPlaceQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void runPlaceSearch();
+                }}
+              />
+              <button className="secondary icon-button" type="button" onClick={runPlaceSearch}>
+                <Search size={17} />
+              </button>
+            </div>
+            {placeResults.length > 0 ? (
+              <div className="place-results">
+                {placeResults.map((place) => (
+                  <button
+                    className="place-result"
+                    key={place.place_id}
+                    type="button"
+                    onClick={() => selectPlace(place)}
+                  >
+                    {place.display_name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
           <div className="point-list">
             <PointRow label="Start" point={start} />

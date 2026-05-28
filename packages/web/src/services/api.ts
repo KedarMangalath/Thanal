@@ -21,6 +21,13 @@ export type SavedRoute = {
   departureTime: string | null;
 };
 
+export type PlaceResult = {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
 export async function fetchRoute(start: LatLng, end: LatLng): Promise<OsrmRoute> {
   const url = new URL(
     `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}`
@@ -93,6 +100,19 @@ export async function saveRoute(input: {
 
   if (!response.ok) {
     throw new Error("Could not save route.");
+  }
+
+  return response.json();
+}
+
+export async function searchPlaces(query: string): Promise<PlaceResult[]> {
+  const url = new URL(`${BACKEND_URL}/api/places/search`);
+  url.searchParams.set("q", query);
+  url.searchParams.set("limit", "5");
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Place search is unavailable.");
   }
 
   return response.json();
