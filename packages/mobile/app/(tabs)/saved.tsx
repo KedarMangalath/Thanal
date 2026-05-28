@@ -1,6 +1,7 @@
 import type { RouteAnalysis } from "@thanal/shared";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCommuteNotifications } from "../../hooks/useCommuteNotifications";
 import { API_BASE_URL } from "../../utils/api";
 
 type SavedRoute = {
@@ -18,6 +19,7 @@ export default function SavedScreen() {
   const [routes, setRoutes] = useState<SavedRoute[]>([]);
   const [recommendations, setRecommendations] = useState<Record<number, RouteAnalysis>>({});
   const [status, setStatus] = useState("Loading saved commutes.");
+  const { notificationStatus, scheduleReminder } = useCommuteNotifications();
 
   const loadRoutes = useCallback(async () => {
     try {
@@ -81,6 +83,7 @@ export default function SavedScreen() {
         <Text style={styles.buttonText}>Save sample commute</Text>
       </Pressable>
       <Text style={styles.status}>{status}</Text>
+      {notificationStatus ? <Text style={styles.status}>{notificationStatus}</Text> : null}
       {routes.map((route) => (
         <View key={route.id} style={styles.card}>
           <Text style={styles.cardTitle}>{route.name}</Text>
@@ -96,6 +99,9 @@ export default function SavedScreen() {
           ) : null}
           <Pressable style={styles.secondaryButton} onPress={() => refreshRoute(route)}>
             <Text style={styles.secondaryButtonText}>Refresh today</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => scheduleReminder(route.name)}>
+            <Text style={styles.secondaryButtonText}>Notify in 1 min</Text>
           </Pressable>
         </View>
       ))}
