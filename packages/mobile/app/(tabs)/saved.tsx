@@ -2,7 +2,7 @@ import type { RouteAnalysis } from "@thanal/shared";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useCommuteNotifications } from "../../hooks/useCommuteNotifications";
-import { API_BASE_URL } from "../../utils/api";
+import { API_BASE_URL, deleteSavedRoute } from "../../utils/api";
 
 type SavedRoute = {
   id: number;
@@ -76,6 +76,21 @@ export default function SavedScreen() {
     }
   }
 
+  async function removeRoute(route: SavedRoute) {
+    try {
+      await deleteSavedRoute(route.id);
+      setRoutes((current) => current.filter((saved) => saved.id !== route.id));
+      setRecommendations((current) => {
+        const next = { ...current };
+        delete next[route.id];
+        return next;
+      });
+      setStatus(`${route.name} deleted.`);
+    } catch {
+      setStatus("Could not delete that commute.");
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Saved commutes</Text>
@@ -102,6 +117,9 @@ export default function SavedScreen() {
           </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => scheduleReminder(route.name)}>
             <Text style={styles.secondaryButtonText}>Notify in 1 min</Text>
+          </Pressable>
+          <Pressable style={styles.deleteButton} onPress={() => removeRoute(route)}>
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </Pressable>
         </View>
       ))}
@@ -173,6 +191,17 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: "#17211f",
+    fontWeight: "800"
+  },
+  deleteButton: {
+    alignItems: "center",
+    backgroundColor: "#fff1e8",
+    borderRadius: 8,
+    marginTop: 4,
+    padding: 12
+  },
+  deleteButtonText: {
+    color: "#8a3b12",
     fontWeight: "800"
   }
 });

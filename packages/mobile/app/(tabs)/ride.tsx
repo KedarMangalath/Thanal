@@ -8,6 +8,7 @@ import ComfortScore from "../../components/ComfortScore";
 import { useComfortScore } from "../../hooks/useComfortScore";
 import { useRoute } from "../../hooks/useRoute";
 import { useWeather } from "../../hooks/useWeather";
+import PlaceSearch from "../../components/PlaceSearch";
 
 const sampleRide: LatLng[] = [
   { lat: 10.0149, lng: 76.3419 },
@@ -36,6 +37,18 @@ export default function RideScreen() {
     setEnd(point);
   }
 
+  function selectStart(point: LatLng) {
+    setStart(point);
+    setAnalysis(null);
+    route.reset();
+  }
+
+  function selectEnd(point: LatLng) {
+    setEnd(point);
+    setAnalysis(null);
+    route.reset();
+  }
+
   async function analyzeRide() {
     if (!start || !end) return;
     const routed = await route.fetchRoute(start, end);
@@ -46,6 +59,8 @@ export default function RideScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Ride planner</Text>
+      <PlaceSearch label="Start" onSelect={selectStart} />
+      <PlaceSearch label="Destination" onSelect={selectEnd} />
       <MapPicker start={start} end={end} route={route.coordinates.length > 0 ? route.coordinates : sampleRide} onPick={onPick} />
 
       <View style={styles.switchRow}>

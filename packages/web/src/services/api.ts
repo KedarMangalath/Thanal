@@ -105,6 +105,16 @@ export async function saveRoute(input: {
   return response.json();
 }
 
+export async function deleteSavedRoute(id: number): Promise<void> {
+  const response = await fetch(`${BACKEND_URL}/api/saved-routes/${id}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not delete route.");
+  }
+}
+
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   const url = new URL(`${BACKEND_URL}/api/places/search`);
   url.searchParams.set("q", query);

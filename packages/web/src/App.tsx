@@ -15,7 +15,8 @@ import {
   MapPin,
   Navigation,
   Search,
-  Sun
+  Sun,
+  Trash2
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ComfortScore from "./components/ComfortScore";
@@ -26,6 +27,7 @@ import {
   fetchRoute,
   fetchSavedRoutes,
   fetchWeather,
+  deleteSavedRoute,
   saveRoute,
   searchPlaces,
   type PlaceResult,
@@ -167,6 +169,16 @@ export default function App() {
     setPlaceResults([]);
     setPlaceQuery("");
     setStatus(`${placeTarget === "start" ? "Start" : "Destination"} set from search.`);
+  }
+
+  async function removeSavedRoute(id: number) {
+    try {
+      await deleteSavedRoute(id);
+      setSavedRoutes((current) => current.filter((saved) => saved.id !== id));
+      setStatus("Saved commute deleted.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not delete commute.");
+    }
   }
 
   return (
@@ -328,24 +340,33 @@ export default function App() {
                 <strong>{savedRoutes.length}</strong>
               </div>
               {savedRoutes.slice(0, 3).map((saved) => (
-                <button
-                  className="saved-route"
-                  key={saved.id}
-                  type="button"
-                  onClick={() => {
-                    setStart({ lat: saved.startLat, lng: saved.startLng });
-                    setEnd({ lat: saved.endLat, lng: saved.endLng });
-                    if (saved.departureTime) {
-                      setDepartureTime(toDateTimeLocal(new Date(saved.departureTime)));
-                    }
-                    setRoute([]);
-                    setAnalysis(null);
-                    setStatus(`${saved.name} loaded.`);
-                  }}
-                >
-                  <span>{saved.name}</span>
-                  <small>{saved.mode.toUpperCase()}</small>
-                </button>
+                <div className="saved-route" key={saved.id}>
+                  <button
+                    className="saved-route-main"
+                    type="button"
+                    onClick={() => {
+                      setStart({ lat: saved.startLat, lng: saved.startLng });
+                      setEnd({ lat: saved.endLat, lng: saved.endLng });
+                      if (saved.departureTime) {
+                        setDepartureTime(toDateTimeLocal(new Date(saved.departureTime)));
+                      }
+                      setRoute([]);
+                      setAnalysis(null);
+                      setStatus(`${saved.name} loaded.`);
+                    }}
+                  >
+                    <span>{saved.name}</span>
+                    <small>{saved.mode.toUpperCase()}</small>
+                  </button>
+                  <button
+                    aria-label={`Delete ${saved.name}`}
+                    className="saved-route-delete"
+                    type="button"
+                    onClick={() => void removeSavedRoute(saved.id)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               ))}
             </section>
           ) : null}
