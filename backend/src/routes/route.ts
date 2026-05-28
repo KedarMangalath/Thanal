@@ -1,6 +1,7 @@
 import { analyzeRoute, type LatLng } from "@thanal/shared";
 import { Router } from "express";
 import { z } from "zod";
+import { fetchRoadRoute, routeCoordinates } from "../services/osrm";
 
 const router = Router();
 
@@ -20,26 +21,11 @@ router.get("/", async (request, response, next) => {
     const start = parseLatLng(String(request.query.start ?? ""));
     const end = parseLatLng(String(request.query.end ?? ""));
     const departureTime = new Date(String(request.query.departureTime ?? new Date().toISOString()));
-    const url = new URL(
-      `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}`
-    );
-    url.searchParams.set("overview", "full");
-    url.searchParams.set("geometries", "geojson");
-    url.searchParams.set("steps", "false");
-
-    const osrmResponse = await fetch(url);
-    if (!osrmResponse.ok) {
-      response.status(osrmResponse.status).json({ error: "OSRM route request failed." });
-      return;
-    }
-
-    const osrm = await osrmResponse.json();
-    const coordinates = osrm.routes[0].geometry.coordinates.map(
-      ([lng, lat]: [number, number]) => ({ lat, lng })
-    );
+    const route = await fetchRoadRoute(start, end);
+    const coordinates = routeCoordinates(route);
 
     response.json({
-      route: osrm.routes[0],
+      route,
       analysis: analyzeRoute(coordinates, { departureTime })
     });
   } catch (error) {

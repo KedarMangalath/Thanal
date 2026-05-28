@@ -1,3 +1,4 @@
+import type { RouteAnalysis } from "@thanal/shared";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { API_BASE_URL } from "../../utils/api";
@@ -15,6 +16,7 @@ type SavedRoute = {
 
 export default function SavedScreen() {
   const [routes, setRoutes] = useState<SavedRoute[]>([]);
+  const [recommendations, setRecommendations] = useState<Record<number, RouteAnalysis>>({});
   const [status, setStatus] = useState("Loading saved commutes.");
 
   const loadRoutes = useCallback(async () => {
@@ -53,6 +55,25 @@ export default function SavedScreen() {
     }
   }
 
+  async function refreshRoute(route: SavedRoute) {
+    setStatus(`Refreshing ${route.name}.`);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/saved-routes/${route.id}/refresh?departureTime=${encodeURIComponent(
+          new Date().toISOString()
+        )}`
+      );
+
+      if (!response.ok) throw new Error("Refresh failed.");
+      const data = (await response.json()) as { analysis: RouteAnalysis };
+      setRecommendations((current) => ({ ...current, [route.id]: data.analysis }));
+      setStatus(`${route.name} refreshed.`);
+    } catch {
+      setStatus("Could not refresh that commute.");
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Saved commutes</Text>
@@ -64,13 +85,27 @@ export default function SavedScreen() {
         <View key={route.id} style={styles.card}>
           <Text style={styles.cardTitle}>{route.name}</Text>
           <Text style={styles.cardBody}>
-            {route.mode.toUpperCase()} · {route.startLat.toFixed(3)}, {route.startLng.toFixed(3)} to{" "}
+            {route.mode.toUpperCase()} - {route.startLat.toFixed(3)}, {route.startLng.toFixed(3)} to{" "}
             {route.endLat.toFixed(3)}, {route.endLng.toFixed(3)}
           </Text>
+          {recommendations[route.id] ? (
+            <Text style={styles.recommendation}>
+              Today: {formatSeat(recommendations[route.id].recommendedSeat)} -{" "}
+              {Math.round(recommendations[route.id].totalDurationMinutes)} min
+            </Text>
+          ) : null}
+          <Pressable style={styles.secondaryButton} onPress={() => refreshRoute(route)}>
+            <Text style={styles.secondaryButtonText}>Refresh today</Text>
+          </Pressable>
         </View>
       ))}
     </ScrollView>
   );
+}
+
+function formatSeat(seat: RouteAnalysis["recommendedSeat"]) {
+  if (seat === "either") return "Either side";
+  return seat === "left" ? "Sit left" : "Sit right";
 }
 
 const styles = StyleSheet.create({
@@ -103,6 +138,11 @@ const styles = StyleSheet.create({
     color: "#66736d",
     lineHeight: 22
   },
+  recommendation: {
+    color: "#0f766e",
+    fontSize: 16,
+    fontWeight: "800"
+  },
   button: {
     alignItems: "center",
     backgroundColor: "#0f766e",
@@ -117,5 +157,16 @@ const styles = StyleSheet.create({
   status: {
     color: "#66736d",
     lineHeight: 20
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: "#edf2f0",
+    borderRadius: 8,
+    marginTop: 4,
+    padding: 12
+  },
+  secondaryButtonText: {
+    color: "#17211f",
+    fontWeight: "800"
   }
 });
