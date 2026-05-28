@@ -13,6 +13,7 @@ export type OsrmRoute = {
 export type RouteOption = {
   id: string;
   label: string;
+  serviceHint?: string;
   route?: OsrmRoute;
   coordinates: LatLng[];
   analysis: RouteAnalysis;

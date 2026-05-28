@@ -12,6 +12,8 @@ import PlaceSearch from "../../components/PlaceSearch";
 import RouteOptions from "../../components/RouteOptions";
 import { fetchRouteOptions, type RouteOption } from "../../utils/api";
 
+type FlowStage = "entry" | "routes" | "map";
+
 export default function RideScreen() {
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
@@ -21,6 +23,7 @@ export default function RideScreen() {
   const [routeCoordinates, setRouteCoordinates] = useState<LatLng[]>([]);
   const [isRouting, setIsRouting] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [stage, setStage] = useState<FlowStage>("entry");
   const weather = useWeather();
   const comfort = useComfortScore(weather.weather);
 
@@ -33,6 +36,7 @@ export default function RideScreen() {
       setSelectedRouteId(null);
       setRouteCoordinates([]);
       setRouteError(null);
+      setStage("entry");
       return;
     }
 
@@ -41,6 +45,7 @@ export default function RideScreen() {
     setSelectedRouteId(null);
     setRouteCoordinates([]);
     setRouteError(null);
+    setStage("entry");
   }
 
   function selectStart(point: LatLng) {
@@ -50,6 +55,7 @@ export default function RideScreen() {
     setSelectedRouteId(null);
     setRouteCoordinates([]);
     setRouteError(null);
+    setStage("entry");
   }
 
   function selectEnd(point: LatLng) {
@@ -59,6 +65,7 @@ export default function RideScreen() {
     setSelectedRouteId(null);
     setRouteCoordinates([]);
     setRouteError(null);
+    setStage("entry");
   }
 
   async function analyzeRide() {
@@ -85,11 +92,13 @@ export default function RideScreen() {
       setRouteCoordinates(option?.coordinates ?? []);
       setAnalysis(option?.analysis ?? null);
       await weather.fetchWeather(start);
+      setStage("routes");
     } catch (error) {
       setRouteError(error instanceof Error ? error.message : "Ride route failed.");
       setOptions([]);
       setRouteCoordinates([]);
       setAnalysis(null);
+      setStage("entry");
     } finally {
       setIsRouting(false);
     }
@@ -100,14 +109,23 @@ export default function RideScreen() {
       <Text style={styles.title}>Ride planner</Text>
       <PlaceSearch label="Start" onSelect={selectStart} />
       <PlaceSearch label="Destination" onSelect={selectEnd} />
-      <MapPicker
-        start={start}
-        end={end}
-        route={routeCoordinates}
-        routes={options}
-        activeRouteId={selectedRouteId}
-        onPick={onPick}
-      />
+      {stage === "map" ? (
+        <MapPicker
+          start={start}
+          end={end}
+          route={routeCoordinates}
+          routes={options}
+          activeRouteId={selectedRouteId}
+          onPick={onPick}
+        />
+      ) : (
+        <View style={styles.entryCard}>
+          <Text style={styles.entryTitle}>Find route options first</Text>
+          <Text style={styles.entryBody}>
+            Pick start and destination, then choose the most comfortable route.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Shade preference</Text>
@@ -129,12 +147,13 @@ export default function RideScreen() {
           setSelectedRouteId(option.id);
           setRouteCoordinates(option.coordinates);
           setAnalysis(option.analysis);
+          setStage("map");
         }}
       />
 
-      {analysis ? <GlareWarning count={analysis.glareWindows.length} /> : null}
-      {comfort ? <ComfortScore score={comfort.score} label={comfort.label} /> : null}
-      {weather.weather ? (
+      {analysis && stage === "map" ? <GlareWarning count={analysis.glareWindows.length} /> : null}
+      {comfort && stage === "map" ? <ComfortScore score={comfort.score} label={comfort.label} /> : null}
+      {weather.weather && stage === "map" ? (
         <RainWindow
           probability={weather.weather.precipitationProbability ?? 0}
           timeline={weather.weather.rainTimeline}
@@ -198,5 +217,22 @@ const styles = StyleSheet.create({
     color: "#a15c00",
     fontSize: 13,
     lineHeight: 18
+  },
+  entryCard: {
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderColor: "#d7e0db",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+    padding: 16
+  },
+  entryTitle: {
+    color: "#17211f",
+    fontSize: 16,
+    fontWeight: "800"
+  },
+  entryBody: {
+    color: "#66736d",
+    lineHeight: 20
   }
 });

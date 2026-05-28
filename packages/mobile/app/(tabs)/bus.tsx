@@ -13,6 +13,8 @@ import RainWindow from "../../components/RainWindow";
 import RouteOptions from "../../components/RouteOptions";
 import { fetchRouteOptions, type RouteOption } from "../../utils/api";
 
+type FlowStage = "entry" | "routes" | "map";
+
 export default function BusScreen() {
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
@@ -26,6 +28,7 @@ export default function BusScreen() {
   const [routeCoordinates, setRouteCoordinates] = useState<LatLng[]>([]);
   const [isRouting, setIsRouting] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [stage, setStage] = useState<FlowStage>("entry");
 
   function onPick(point: LatLng) {
     if (!start || (start && end)) {
@@ -38,6 +41,7 @@ export default function BusScreen() {
       setSelectedRouteId(null);
       setRouteCoordinates([]);
       setRouteError(null);
+      setStage("entry");
       return;
     }
 
@@ -47,6 +51,7 @@ export default function BusScreen() {
     setSelectedRouteId(null);
     setRouteCoordinates([]);
     setRouteError(null);
+    setStage("entry");
   }
 
   function selectStart(point: LatLng, name: string) {
@@ -57,6 +62,7 @@ export default function BusScreen() {
     setSelectedRouteId(null);
     setRouteCoordinates([]);
     setRouteError(null);
+    setStage("entry");
   }
 
   function selectEnd(point: LatLng, name: string) {
@@ -67,6 +73,7 @@ export default function BusScreen() {
     setSelectedRouteId(null);
     setRouteCoordinates([]);
     setRouteError(null);
+    setStage("entry");
   }
 
   async function analyzeTappedRoute() {
@@ -89,11 +96,13 @@ export default function BusScreen() {
       setRouteCoordinates(option?.coordinates ?? []);
       setAnalysis(option?.analysis ?? null);
       await weather.fetchWeather(start);
+      setStage("routes");
     } catch (error) {
       setRouteError(error instanceof Error ? error.message : "Road route failed.");
       setOptions([]);
       setRouteCoordinates([]);
       setAnalysis(null);
+      setStage("entry");
     } finally {
       setIsRouting(false);
     }
@@ -104,14 +113,23 @@ export default function BusScreen() {
       <Text style={styles.title}>Bus seat picker</Text>
       <PlaceSearch label="Start" onSelect={selectStart} />
       <PlaceSearch label="Destination" onSelect={selectEnd} />
-      <MapPicker
-        start={start}
-        end={end}
-        route={routeCoordinates}
-        routes={options}
-        activeRouteId={selectedRouteId}
-        onPick={onPick}
-      />
+      {stage === "map" ? (
+        <MapPicker
+          start={start}
+          end={end}
+          route={routeCoordinates}
+          routes={options}
+          activeRouteId={selectedRouteId}
+          onPick={onPick}
+        />
+      ) : (
+        <View style={styles.entryCard}>
+          <Text style={styles.entryTitle}>Pick start and destination first</Text>
+          <Text style={styles.entryBody}>
+            Thanal will show route choices before opening the map.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.pointPanel}>
         <Point label="Start" point={start} name={startName} />
@@ -133,10 +151,11 @@ export default function BusScreen() {
           setSelectedRouteId(option.id);
           setRouteCoordinates(option.coordinates);
           setAnalysis(option.analysis);
+          setStage("map");
         }}
       />
 
-      {analysis ? (
+      {analysis && stage === "map" ? (
         <>
           <SeatRecommendation analysis={analysis} />
           <SunTimeline analysis={analysis} />
@@ -212,5 +231,22 @@ const styles = StyleSheet.create({
     color: "#a15c00",
     fontSize: 13,
     lineHeight: 18
+  },
+  entryCard: {
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderColor: "#d7e0db",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+    padding: 16
+  },
+  entryTitle: {
+    color: "#17211f",
+    fontSize: 16,
+    fontWeight: "800"
+  },
+  entryBody: {
+    color: "#66736d",
+    lineHeight: 20
   }
 });

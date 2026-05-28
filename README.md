@@ -16,6 +16,7 @@ Thanal is my attempt at building this properly - a travel companion that actuall
 - Expo Go mobile app using Expo SDK 54
 - Tap-to-select start and destination points
 - Place search through the backend Nominatim proxy
+- Entry-first trip flow: choose mode, start, destination, and time before the map opens
 - OSRM road routing with multiple route options, text cards, and map polylines
 - Train mode with station search, coastal and Kottayam-side rail route options, and rail-side sun analysis
 - SunCalc-based segment analysis for sun side, seat recommendation, glare, and timeline exposure
@@ -133,6 +134,7 @@ docs/              Screenshots and demo assets
 
 - The backend uses Node's built-in `node:sqlite` module to avoid native npm compilation on Windows and Node 24.
 - If Gemini is not configured or unavailable, the assistant returns a deterministic route-tool summary instead of failing the flow.
+- Train mode currently uses the bundled Kerala rail corridor engine. Official NTES live train status is available for users, but Thanal does not depend on unofficial scraped IRCTC/NTES APIs.
 - `better-sqlite3` was intentionally avoided for now because Node 24 did not have a prebuilt binary on this machine and required Visual Studio C++ build tools.
 
 ## One-Line Pitch

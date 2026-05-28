@@ -13,6 +13,8 @@ import { useComfortScore } from "../../hooks/useComfortScore";
 import { useWeather } from "../../hooks/useWeather";
 import { fetchRailRoute, searchRailStations, type RouteOption } from "../../utils/api";
 
+type FlowStage = "entry" | "routes" | "map";
+
 export default function TrainScreen() {
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
@@ -21,6 +23,7 @@ export default function TrainScreen() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
   const [status, setStatus] = useState("Search railway stations or tap the map.");
+  const [stage, setStage] = useState<FlowStage>("entry");
   const weather = useWeather();
   const comfort = useComfortScore(weather.weather);
 
@@ -32,23 +35,33 @@ export default function TrainScreen() {
       setRoute([]);
       setOptions([]);
       setSelectedRouteId(null);
+      setStage("entry");
       setStatus("Start set. Pick destination station.");
       return;
     }
 
     setEnd(point);
+    setStage("entry");
     setStatus("Destination set. Analyze when ready.");
   }
 
   function selectStart(point: LatLng, name: string) {
     setStart(point);
     setAnalysis(null);
+    setOptions([]);
+    setSelectedRouteId(null);
+    setRoute([]);
+    setStage("entry");
     setStatus(`Start: ${name}`);
   }
 
   function selectEnd(point: LatLng, name: string) {
     setEnd(point);
     setAnalysis(null);
+    setOptions([]);
+    setSelectedRouteId(null);
+    setRoute([]);
+    setStage("entry");
     setStatus(`Destination: ${name}`);
   }
 
@@ -70,9 +83,11 @@ export default function TrainScreen() {
       setRoute(option?.coordinates ?? rail.coordinates);
       setAnalysis(option?.analysis ?? rail.analysis);
       await weather.fetchWeather(start);
-      setStatus(`${rail.from.name} to ${rail.to.name}. Confidence: ${rail.confidence}.`);
+      setStage("routes");
+      setStatus(`${rail.from.name} to ${rail.to.name}. Pick a rail route.`);
     } catch {
       setStatus("Could not analyze this rail route.");
+      setStage("entry");
     }
   }
 
@@ -81,14 +96,23 @@ export default function TrainScreen() {
       <Text style={styles.title}>Train seat picker</Text>
       <PlaceSearch label="Boarding station" searcher={searchRailStations} onSelect={selectStart} />
       <PlaceSearch label="Destination station" searcher={searchRailStations} onSelect={selectEnd} />
-      <MapPicker
-        start={start}
-        end={end}
-        route={route}
-        routes={options}
-        activeRouteId={selectedRouteId}
-        onPick={onPick}
-      />
+      {stage === "map" ? (
+        <MapPicker
+          start={start}
+          end={end}
+          route={route}
+          routes={options}
+          activeRouteId={selectedRouteId}
+          onPick={onPick}
+        />
+      ) : (
+        <View style={styles.entryCard}>
+          <Text style={styles.entryTitle}>Search railway stations first</Text>
+          <Text style={styles.entryBody}>
+            Thanal will compare coastal and Kottayam-side rail corridors before opening the map.
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.status}>{status}</Text>
 
@@ -103,10 +127,11 @@ export default function TrainScreen() {
           setSelectedRouteId(option.id);
           setRoute(option.coordinates);
           setAnalysis(option.analysis);
+          setStage("map");
         }}
       />
 
-      {analysis ? (
+      {analysis && stage === "map" ? (
         <>
           <SeatRecommendation analysis={analysis} />
           <SunTimeline analysis={analysis} />
@@ -151,5 +176,22 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "800"
+  },
+  entryCard: {
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderColor: "#d7e0db",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+    padding: 16
+  },
+  entryTitle: {
+    color: "#17211f",
+    fontSize: 16,
+    fontWeight: "800"
+  },
+  entryBody: {
+    color: "#66736d",
+    lineHeight: 20
   }
 });
