@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Thanal",
+    "slug": "thanal",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "thanal",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f766e"
+      }
+    },
+    "plugins": ["expo-router", "expo-notifications"],
+    "extra": {
+      "apiBaseUrl": "http://localhost:4010"
+    }
+  }
+}

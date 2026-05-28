@@ -1,0 +1,26 @@
+{
+  "name": "thanal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sun and comfort-aware travel assistant for Kerala commuters.",
+  "workspaces": [
+    "packages/*",
+    "backend"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @thanal/web",
+    "dev:mobile": "npm run start -w @thanal/mobile",
+    "dev:backend": "npm run dev -w @thanal/backend",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "keywords": [
+    "kerala",
+    "sun",
+    "routing",
+    "comfort",
+    "travel"
+  ],
+  "license": "MIT"
+}
