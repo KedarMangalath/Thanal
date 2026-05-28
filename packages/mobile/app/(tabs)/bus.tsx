@@ -97,7 +97,10 @@ export default function BusScreen() {
           <SunTimeline analysis={analysis} />
           {comfort ? <ComfortScore score={comfort.score} label={comfort.label} /> : null}
           {weather.weather ? (
-            <RainWindow probability={weather.weather.precipitationProbability ?? 0} />
+            <RainWindow
+              probability={weather.weather.precipitationProbability ?? 0}
+              timeline={weather.weather.rainTimeline}
+            />
           ) : null}
         </>
       ) : null}

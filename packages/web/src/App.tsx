@@ -324,7 +324,12 @@ export default function App() {
               ) : null}
 
               {comfort ? <ComfortScore comfort={comfort} /> : null}
-              {weather ? <RainWindow probability={weather.precipitationProbability ?? 0} /> : null}
+              {weather ? (
+                <RainWindow
+                  probability={weather.precipitationProbability ?? 0}
+                  timeline={weather.rainTimeline}
+                />
+              ) : null}
             </>
           ) : (
             <section className="empty-state">

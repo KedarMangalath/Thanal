@@ -1,4 +1,4 @@
-import type { LatLng, WeatherSnapshot } from "@thanal/shared";
+import type { LatLng, RainBucket, WeatherSnapshot } from "@thanal/shared";
 
 const BACKEND_URL = "http://localhost:4010";
 
@@ -72,7 +72,8 @@ export async function fetchWeather(point: LatLng): Promise<WeatherSnapshot> {
     temperatureC: data.hourly.temperature_2m[hour] ?? 32,
     relativeHumidity: data.hourly.relative_humidity_2m[hour] ?? 78,
     uvIndex: data.hourly.uv_index[hour] ?? 7,
-    precipitationProbability: data.hourly.precipitation_probability[hour] ?? 20
+    precipitationProbability: data.hourly.precipitation_probability[hour] ?? 20,
+    rainTimeline: getRainTimeline(data.hourly, hour)
   };
 }
 
@@ -133,6 +134,38 @@ function fallbackWeather(): WeatherSnapshot {
     temperatureC: 32,
     relativeHumidity: 78,
     uvIndex: 7,
-    precipitationProbability: 20
+    precipitationProbability: 20,
+    rainTimeline: Array.from({ length: 8 }, (_, index) => ({
+      time: new Date(Date.now() + index * 60 * 60 * 1000).toISOString(),
+      probability: Math.max(0, 20 - index * 3)
+    }))
   };
+}
+
+function getRainTimeline(
+  hourly: {
+    time?: string[];
+    precipitation_probability?: number[];
+    precipitation?: number[];
+  },
+  fallbackStartIndex: number
+): RainBucket[] {
+  const times = hourly.time ?? [];
+  const probabilities = hourly.precipitation_probability ?? [];
+  const precipitation = hourly.precipitation ?? [];
+  const now = Date.now();
+  const startIndex = Math.max(
+    0,
+    times.findIndex((time) => new Date(time).getTime() >= now)
+  );
+  const sliceStart = startIndex >= 0 ? startIndex : fallbackStartIndex;
+
+  return Array.from({ length: 8 }, (_, offset) => {
+    const index = sliceStart + offset;
+    return {
+      time: times[index] ?? new Date(now + offset * 60 * 60 * 1000).toISOString(),
+      probability: probabilities[index] ?? probabilities[fallbackStartIndex] ?? 0,
+      precipitationMm: precipitation[index]
+    };
+  });
 }

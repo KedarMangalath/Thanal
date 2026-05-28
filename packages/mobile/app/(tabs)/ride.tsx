@@ -79,7 +79,12 @@ export default function RideScreen() {
 
       {analysis ? <GlareWarning count={analysis.glareWindows.length} /> : null}
       {comfort ? <ComfortScore score={comfort.score} label={comfort.label} /> : null}
-      {weather.weather ? <RainWindow probability={weather.weather.precipitationProbability ?? 0} /> : null}
+      {weather.weather ? (
+        <RainWindow
+          probability={weather.weather.precipitationProbability ?? 0}
+          timeline={weather.weather.rainTimeline}
+        />
+      ) : null}
     </ScrollView>
   );
 }

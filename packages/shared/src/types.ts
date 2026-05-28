@@ -44,6 +44,13 @@ export type WeatherSnapshot = {
   relativeHumidity: number;
   uvIndex: number;
   precipitationProbability?: number;
+  rainTimeline?: RainBucket[];
+};
+
+export type RainBucket = {
+  time: string;
+  probability: number;
+  precipitationMm?: number;
 };
 
 export type ComfortScore = {

@@ -1,4 +1,4 @@
-import type { LatLng, WeatherSnapshot } from "@thanal/shared";
+import type { LatLng, RainBucket, WeatherSnapshot } from "@thanal/shared";
 import { useCallback, useState } from "react";
 
 type UseWeatherState = {
@@ -39,7 +39,8 @@ export function useWeather(): UseWeatherState {
         temperatureC: data.hourly.temperature_2m[hour] ?? 32,
         relativeHumidity: data.hourly.relative_humidity_2m[hour] ?? 78,
         uvIndex: data.hourly.uv_index[hour] ?? 7,
-        precipitationProbability: data.hourly.precipitation_probability[hour] ?? 20
+        precipitationProbability: data.hourly.precipitation_probability[hour] ?? 20,
+        rainTimeline: getRainTimeline(data.hourly, hour)
       };
 
       setWeather(snapshot);
@@ -55,4 +56,29 @@ export function useWeather(): UseWeatherState {
   }, []);
 
   return { weather, error, isLoading, fetchWeather };
+}
+
+function getRainTimeline(
+  hourly: {
+    time?: string[];
+    precipitation_probability?: number[];
+    precipitation?: number[];
+  },
+  fallbackStartIndex: number
+): RainBucket[] {
+  const times = hourly.time ?? [];
+  const probabilities = hourly.precipitation_probability ?? [];
+  const precipitation = hourly.precipitation ?? [];
+  const now = Date.now();
+  const firstFutureIndex = times.findIndex((time) => new Date(time).getTime() >= now);
+  const startIndex = firstFutureIndex >= 0 ? firstFutureIndex : fallbackStartIndex;
+
+  return Array.from({ length: 8 }, (_, offset) => {
+    const index = startIndex + offset;
+    return {
+      time: times[index] ?? new Date(now + offset * 60 * 60 * 1000).toISOString(),
+      probability: probabilities[index] ?? probabilities[fallbackStartIndex] ?? 0,
+      precipitationMm: precipitation[index]
+    };
+  });
 }

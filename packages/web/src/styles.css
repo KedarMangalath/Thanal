@@ -409,6 +409,16 @@ input {
   background: #0891b2;
 }
 
+.rain-labels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.rain-labels span {
+  color: #66736d;
+  font-size: 12px;
+}
+
 .empty-state {
   align-items: center;
   color: #66736d;
