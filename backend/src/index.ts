@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import { errorHandler } from "./middleware/errorHandler";
 import communityRouter from "./routes/community";
 import placesRouter from "./routes/places";
 import routeRouter from "./routes/route";
@@ -21,6 +22,7 @@ app.use("/api/weather", weatherRouter);
 app.use("/api/places", placesRouter);
 app.use("/api/community", communityRouter);
 app.use("/api/saved-routes", savedRoutesRouter);
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Thanal backend listening on http://localhost:${port}`);
