@@ -125,10 +125,48 @@ Vercel will build and serve your web client. Since the client is deployed separa
 
 ---
 
+## Option 4: Deploying Backend on Railway
+
+Railway is a great cloud platform that allows hosting full Node.js applications. 
+
+### SQLite Persistence on Railway
+By default, Railway deployments are ephemeral (restarts will wipe SQLite data). To enable persistence for `thanal.db` on Railway:
+1. Go to your project dashboard on Railway.
+2. Click **+ New** > **Volume**.
+3. Create a volume (e.g., `thanal_data`).
+4. Select your Node service, go to **Settings** > **Volumes** > **Mount Volume**.
+5. Set the Mount Path to `/data` and update your backend's environment variables to set `DATABASE_URL=/data/thanal.db`.
+6. Railway's free tier provides **$5 of free credits** (or 500 hours) every month, which is enough to run the app, but they require adding a credit card to prevent abuse, and the service will suspend once monthly credits are exhausted if you are on the hobby/trial plan.
+
+---
+
+## Option 5: Deplaying Backend on Vercel (Using a Cloud Database)
+
+Vercel is designed for **serverless functions** (stateless, on-demand execution). 
+If you deploy your Express backend directly to Vercel, **you cannot write to a local `thanal.db` file** because serverless functions have a read-only filesystem and boot down when not in use.
+
+To deploy your backend on Vercel for free with permanent database persistence, you must connect the backend to a cloud database:
+
+### 1. Turso (Recommended - Cloud SQLite)
+[Turso](https://turso.tech/) is a serverless database fully compatible with SQLite (based on LibSQL).
+- They have a generous **free tier** (up to 500 databases and 9GB storage).
+- Since it is SQLite-compatible, you don't need to rewrite your SQL queries!
+- **How to connect**: Run `npm install @libsql/client` in `backend`, replace your sqlite connection library with the Turso client, and pass the Turso connection string (`libsql://...`) via environment variables.
+
+### 2. Supabase / Neon (Cloud PostgreSQL)
+Both [Supabase](https://supabase.com/) and [Neon](https://neon.tech/) offer excellent free tiers for Postgres databases.
+- You can create a free database on their cloud, run the tables initialization, and update your backend's DB connector to talk to Postgres instead of SQLite.
+
+Once connected to Turso or Supabase, your Express backend will be completely stateless and can be deployed directly to Vercel Serverless!
+
+---
+
 ## Summary of Hosting Options
 
-| Provider | Sleep Mode? | SQLite Persistence? | Best For | Cost |
+| Provider | Sleep Mode? | SQLite Persistence? | Cost | Best For |
 |---|---|---|---|---|
-| **Render (Unified)** | Yes (15 mins) | No (Ephemeral) | Fast, single-click demos | **Free** |
-| **Fly.io** | No | **Yes (via Volumes)** | Production-grade SQLite deployment | **Free** (within limits) |
-| **Vercel + Render** | Yes (API only) | No (Ephemeral) | High-performance client, slow API wakeup | **Free** |
+| **Render (Unified)** | Yes (15 mins) | No (Ephemeral) | **Free** | Quick single-link demo of the monorepo. |
+| **Fly.io** | No | **Yes (via Volumes)** | **Free** | Production-ready deployment with a persistent local database. |
+| **Vercel + Render** | Yes (API only) | No (Ephemeral) | **Free** | Quick split deployment (instant client load). |
+| **Railway** | No | **Yes (via Volumes)** | **Free Trial / Paid** | User-friendly dashboard with persistent volumes. |
+| **Vercel + Turso** | No | **Yes (Cloud DB)** | **Free** | 100% free, fast, persistent, and never sleeps. |
