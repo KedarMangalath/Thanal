@@ -13,6 +13,7 @@ import weatherRouter from "./routes/weather";
 import uploadRouter from "./routes/upload";
 import washroomsRouter from "./routes/washrooms";
 import path from "path";
+import fs from "fs";
 
 loadBackendEnv();
 
@@ -37,6 +38,18 @@ app.use("/api/auth", authRouter);
 app.use("/api/saved-routes", savedRoutesRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/washrooms", washroomsRouter);
+
+const webDistPath = path.resolve(process.cwd(), "../packages/web/dist");
+if (fs.existsSync(webDistPath)) {
+  app.use(express.static(webDistPath));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      return next();
+    }
+    res.sendFile(path.join(webDistPath, "index.html"));
+  });
+}
+
 app.use(errorHandler);
 
 app.listen(port, () => {

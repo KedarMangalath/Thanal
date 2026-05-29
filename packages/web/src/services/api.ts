@@ -1,6 +1,9 @@
 import type { LatLng, RainBucket, RouteAnalysis, WeatherSnapshot } from "@thanal/shared";
 
-const BACKEND_URL = "http://localhost:4010";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
+  (typeof window !== "undefined" && window.location.port === "5173" 
+    ? "http://localhost:4010" 
+    : (typeof window !== "undefined" ? window.location.origin : "http://localhost:4010"));
 
 export type OsrmRoute = {
   geometry: {
