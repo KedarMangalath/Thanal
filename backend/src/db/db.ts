@@ -160,13 +160,15 @@ CREATE TABLE IF NOT EXISTS washrooms (
   upvotes INTEGER NOT NULL DEFAULT 0,
   downvotes INTEGER NOT NULL DEFAULT 0,
   image_url TEXT,
+  description TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`;
     await db.exec(schemaSql);
+    // Migration: add description column to existing washrooms tables
     try {
       await db.exec("ALTER TABLE washrooms ADD COLUMN description TEXT");
     } catch {
-      // Column already exists
+      // Column already exists — ignore
     }
   } catch (error) {
     console.error("Database initialization failed:", error);
