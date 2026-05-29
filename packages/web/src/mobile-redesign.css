@@ -1,0 +1,68 @@
+/* Added to the end of styles.css */
+@media (max-width: 767px) {
+  .app-shell.mobile-view-map .sidebar,
+  .app-shell.mobile-view-details .sidebar,
+  .app-shell.has-report-pin .sidebar {
+    display: none !important;
+  }
+  
+  .mobile-route-summary-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: var(--space-md);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.3s ease;
+  }
+
+  .sheet-drag-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin-bottom: var(--space-md);
+  }
+
+  .sheet-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .sheet-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+
+  .sheet-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .top-report-btn {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-md);
+    color: var(--primary);
+  }
+}

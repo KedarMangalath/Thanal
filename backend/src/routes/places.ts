@@ -35,4 +35,38 @@ router.get("/search", async (request, response, next) => {
   }
 });
 
+const reverseSchema = z.object({
+  lat: z.coerce.number(),
+  lng: z.coerce.number()
+});
+
+router.get("/reverse", async (request, response, next) => {
+  try {
+    const { lat, lng } = reverseSchema.parse(request.query);
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lng));
+    url.searchParams.set("format", "jsonv2");
+
+    const placesResponse = await fetch(url, {
+      headers: {
+        "User-Agent": "Thanal local development app"
+      }
+    });
+
+    if (!placesResponse.ok) {
+      response.status(placesResponse.status).json({ error: "Nominatim request failed." });
+      return;
+    }
+
+    const data = await placesResponse.json();
+    const displayName = data.display_name || "";
+    const shortName = displayName.split(",").slice(0, 2).join(",").trim();
+
+    response.json({ name: shortName });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

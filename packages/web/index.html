@@ -1,12 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="../../assets/Thanal_Logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Thanal</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Thanal — Sun-aware travel comfort assistant for Kerala commuters. Know which side to sit on." />
+    <meta name="theme-color" content="#FAFBFC" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Thanal — Kerala Travel Comfort</title>
   </head>
   <body>
+    <div id="initial-loader" style="position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #fcf2e3; z-index: 9999; transition: opacity 0.5s ease-out;">
+      <img src="/Thanal.png" alt="Loading Thanal..." style="max-width: 300px; width: 60vw; height: auto; object-fit: contain; animation: pulse 2s infinite ease-in-out;" />
+      <div style="margin-top: 24px; width: 24px; height: 24px; border: 3px solid #E2E8F0; border-top-color: #059669; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      <style>
+        @keyframes pulse {
+          0% { opacity: 0.8; transform: scale(0.98); }
+          50% { opacity: 1; transform: scale(1.02); }
+          100% { opacity: 0.8; transform: scale(0.98); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

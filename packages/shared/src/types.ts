@@ -29,6 +29,27 @@ export type RouteSegmentExposure = {
   glareRisk: boolean;
 };
 
+export type SpeedCamera = {
+  id: number;
+  lat: number;
+  lng: number;
+  source: string;
+  verified: boolean;
+  status: string;
+};
+
+export type Washroom = {
+  id: number;
+  lat: number;
+  lng: number;
+  type: "public" | "fuel_station";
+  status: "good" | "bad" | "unverified";
+  upvotes: number;
+  downvotes: number;
+  image_url: string | null;
+  description: string | null;
+};
+
 export type RouteAnalysis = {
   departureTime: string;
   totalDistanceMeters: number;
@@ -37,6 +58,9 @@ export type RouteAnalysis = {
   recommendedSeat: SeatSide;
   glareWindows: RouteSegmentExposure[];
   timeline: RouteSegmentExposure[];
+  speedCameras?: SpeedCamera[];
+  shadeCoverPercent?: number;
+  washrooms?: Washroom[];
 };
 
 export type WeatherSnapshot = {

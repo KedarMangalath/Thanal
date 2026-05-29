@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "rgba(255,255,255,0.92)",
     borderColor: "#d7e0db",
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 10,
     padding: 12
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: "center",
     backgroundColor: "#5b35f0",
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: "center",
     minHeight: 44
   },

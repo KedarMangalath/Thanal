@@ -8,6 +8,7 @@ build/
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
 npm-debug.log*
 coverage/
 docs/demo.gif

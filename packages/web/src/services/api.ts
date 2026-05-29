@@ -76,14 +76,16 @@ export async function fetchRoute(start: LatLng, end: LatLng): Promise<OsrmRoute>
 }
 
 export async function fetchRouteOptions(input: {
-  start: LatLng;
-  end: LatLng;
+  waypoints: LatLng[];
   departureTime: string;
+  timeType?: "depart" | "arrive";
 }): Promise<RouteOptionsResponse> {
   const url = new URL(`${BACKEND_URL}/api/route`);
-  url.searchParams.set("start", `${input.start.lat},${input.start.lng}`);
-  url.searchParams.set("end", `${input.end.lat},${input.end.lng}`);
+  input.waypoints.forEach(wp => {
+    url.searchParams.append("waypoints", `${wp.lat},${wp.lng}`);
+  });
   url.searchParams.set("departureTime", input.departureTime);
+  if (input.timeType) url.searchParams.set("timeType", input.timeType);
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -154,6 +156,7 @@ export async function fetchRailRoute(input: {
   start: LatLng;
   end: LatLng;
   departureTime: string;
+  timeType?: "depart" | "arrive";
 }): Promise<RailRoute> {
   const response = await fetch(`${BACKEND_URL}/api/rail/route`, {
     method: "POST",
@@ -180,14 +183,34 @@ export async function searchRailStations(query: string): Promise<PlaceResult[]> 
   return response.json();
 }
 
+async function fetchWithBackoff(url: string, options: RequestInit, retries = 3, backoff = 1000): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, backoff));
+        return fetchWithBackoff(url, options, retries - 1, backoff * 2);
+      }
+    }
+    return response;
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, backoff));
+      return fetchWithBackoff(url, options, retries - 1, backoff * 2);
+    }
+    throw err;
+  }
+}
+
 export async function askAssistant(input: {
   message: string;
   mode: "bus" | "bike" | "walk" | "train";
   start: LatLng | null;
   end: LatLng | null;
   departureTime: string;
+  language: "english" | "manglish" | "malayalam";
 }): Promise<{ answer: string; model: string; toolTrace: unknown[] }> {
-  const response = await fetch(`${BACKEND_URL}/api/assistant/plan`, {
+  const response = await fetchWithBackoff(`${BACKEND_URL}/api/assistant/plan`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input)
@@ -221,6 +244,20 @@ export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   }
 
   return response.json();
+}
+
+export async function reverseGeocode(point: LatLng): Promise<string> {
+  const url = new URL(`${BACKEND_URL}/api/places/reverse`);
+  url.searchParams.set("lat", String(point.lat));
+  url.searchParams.set("lng", String(point.lng));
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    return `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`;
+  }
+
+  const data = await response.json();
+  return data.name || `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`;
 }
 
 function fallbackWeather(): WeatherSnapshot {

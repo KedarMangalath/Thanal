@@ -1,0 +1,172 @@
+/* ─── Thanal Design Tokens ─── */
+
+/* Light Theme (Pastel White) — default */
+[data-theme="light"],
+:root {
+  --bg: #FAFBFC;
+  --surface: #FFFFFF;
+  --surface-glass: rgba(255, 255, 255, 0.82);
+  --surface-hover: #F5F7FA;
+  --surface-active: #EEF1F5;
+  --border: #E8ECF0;
+  --border-strong: #D1D5DB;
+
+  --text-primary: #1A1D21;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+
+  --accent: #0D9488;
+  --accent-hover: #0F766E;
+  --accent-soft: #CCFBF1;
+  --accent-text: #FFFFFF;
+
+  --route-1: #0D9488;
+  --route-2: #6366F1;
+  --route-3: #D97706;
+
+  --warning: #F59E0B;
+  --warning-soft: #FEF3C7;
+  --danger: #EF4444;
+  --danger-soft: #FEE2E2;
+  --success: #10B981;
+  --success-soft: #D1FAE5;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+  --shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+  --map-overlay-bg: rgba(255, 255, 255, 0.88);
+  --map-overlay-blur: 20px;
+
+  --sun-left: #F97316;
+  --sun-right: #0891B2;
+  --sun-neutral: #D1D5DB;
+}
+
+/* Dark Theme (True Black) */
+[data-theme="dark"] {
+  --bg: #0A0A0B;
+  --surface: #141416;
+  --surface-glass: rgba(20, 20, 22, 0.85);
+  --surface-hover: #1C1C1F;
+  --surface-active: #252528;
+  --border: #2A2A2E;
+  --border-strong: #3F3F46;
+
+  --text-primary: #F0F0F2;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+
+  --accent: #2DD4BF;
+  --accent-hover: #14B8A6;
+  --accent-soft: #0D3D38;
+  --accent-text: #0A0A0B;
+
+  --route-1: #2DD4BF;
+  --route-2: #818CF8;
+  --route-3: #FBBF24;
+
+  --warning: #FBBF24;
+  --warning-soft: #422006;
+  --danger: #F87171;
+  --danger-soft: #450A0A;
+  --success: #34D399;
+  --success-soft: #052E16;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.5);
+
+  --map-overlay-bg: rgba(20, 20, 22, 0.9);
+  --map-overlay-blur: 24px;
+
+  --sun-left: #FB923C;
+  --sun-right: #22D3EE;
+  --sun-neutral: #3F3F46;
+}
+
+/* ─── Typography ─── */
+:root {
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-hero: 28px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+}
+
+/* ─── Spacing ─── */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+}
+
+/* ─── Radius ─── */
+:root {
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+}
+
+/* ─── Transitions ─── */
+:root {
+  --transition-fast: 150ms ease;
+  --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-theme: 200ms ease;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

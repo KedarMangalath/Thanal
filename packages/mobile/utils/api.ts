@@ -105,6 +105,7 @@ export async function askAssistant(input: {
   start: LatLng | null;
   end: LatLng | null;
   departureTime: string;
+  language?: "english" | "manglish" | "malayalam";
 }): Promise<{ answer: string; model: string; toolTrace: unknown[] }> {
   const response = await fetch(`${API_BASE_URL}/api/assistant/plan`, {
     method: "POST",

@@ -16,7 +16,8 @@ const requestSchema = z.object({
   mode: z.enum(["bus", "bike", "walk", "train"]).default("bus"),
   start: latLngSchema.nullish(),
   end: latLngSchema.nullish(),
-  departureTime: z.string().datetime().optional()
+  departureTime: z.string().datetime().optional(),
+  language: z.enum(["english", "manglish", "malayalam"]).default("english")
 });
 
 router.post("/plan", async (request, response, next) => {
@@ -30,7 +31,7 @@ router.post("/plan", async (request, response, next) => {
       departureTime
     });
 
-    const answer = await askGemini(body.message, toolTrace);
+    const answer = await askGemini(body.message, toolTrace, body.language);
     response.json({
       answer: answer ?? fallbackAnswer(toolTrace),
       model: answer ? process.env.GEMINI_MODEL ?? "gemini-2.5-flash" : "deterministic-fallback",
@@ -73,7 +74,7 @@ async function runAssistantTools(input: {
     ];
   }
 
-  const routes = await fetchRoadRoutes(input.start, input.end, 3);
+  const routes = await fetchRoadRoutes([input.start, input.end], 3);
   return [
     {
       tool: "get_road_route_options",
@@ -96,7 +97,7 @@ async function runAssistantTools(input: {
   ];
 }
 
-async function askGemini(message: string, toolTrace: unknown[]) {
+async function askGemini(message: string, toolTrace: unknown[], language: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -113,8 +114,12 @@ async function askGemini(message: string, toolTrace: unknown[]) {
         systemInstruction: {
           parts: [
             {
-              text:
-                "You are Thanal, a Kerala travel comfort assistant. Use the tool trace as ground truth. Do not invent routes, train names, prices, or live delays. Give concise practical advice and explain why."
+              text: `You are Thanal, a super friendly and helpful travel assistant for India. The user will provide their route details (sun exposure, weather, glare, and transport mode) in their message. Your job is to output a human-readable 2-3 sentence insight. 
+CRITICAL RULES:
+1. STRICTLY NO EMOJIS. DO NOT use a single emoji under any circumstance.
+2. You MUST reply in the language requested by the user: ${language.toUpperCase()}. If the user requests Manglish, write in Malayalam using the English alphabet. If Malayalam, use the Malayalam script.
+3. Tailor your warnings to their transport mode (e.g., helmet/sweat for bikes, window seats for trains, AC/glare for cars).
+4. Use Markdown formatting: bold (**text**) for emphasis.`
             }
           ]
         },
@@ -123,7 +128,7 @@ async function askGemini(message: string, toolTrace: unknown[]) {
             role: "user",
             parts: [
               {
-                text: JSON.stringify({ userMessage: message, toolTrace })
+                text: `Context: ${JSON.stringify(toolTrace)}. Message: ${message}`
               }
             ]
           }
@@ -138,7 +143,8 @@ async function askGemini(message: string, toolTrace: unknown[]) {
 }
 
 function fallbackAnswer(toolTrace: unknown[]) {
-  return `I checked the available route tools. ${JSON.stringify(toolTrace)}`;
+  // TripInsight.tsx handles the actual fallback if API fails
+  return "Could not generate AI insight.";
 }
 
 export default router;

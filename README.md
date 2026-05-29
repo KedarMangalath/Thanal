@@ -6,42 +6,37 @@ Thanal is a travel comfort assistant. It tells commuters which side of a bus or 
 
 ## The Story
 
-I came across an app called Veyil while planning a long bus trip from Thiruvananthapuram to my hometown Perinthalmanna. The idea immediately clicked - it tells you which side of the bus to sit on to avoid the sun. Brilliant concept, especially for Kerala where the sun is genuinely brutal for most of the year. I used it, trusted it, sat on the recommended side, and spent the next four hours getting absolutely cooked through the window while the other side stayed perfectly shaded. That was enough motivation.
+I came across a really neat app called **Veyil** while planning a long train journey from Shoranur to Trivandrum. The concept immediately clicked—it helps you figure out which side of the bus to sit on to avoid the sun. It's a brilliant idea, especially for Kerala where the sun gets quite harsh! However, since the app focuses on bus travel and didn't have train routes mapped, it couldn't help me on the rail tracks, and I ended up getting a bit cooked on my side of the window. 
 
-Thanal is my attempt at building this properly - a travel companion that actually understands what it means to travel in Kerala. The heat, the monsoon, the narrow shaded roads, the flooding underpasses, the temple processions blocking highways. Not a generic global app that happens to have Kerala on its map.
+That train ride got me thinking: what if we built a travel companion that could map out train routes too, and factor in not just the sun's position, but real-time UV indexes, monsoon rain forecasts, and community-sourced updates like clean washrooms and road safety?
+
+That was the spark behind **Thanal**. It's built with love for Kerala commuters to keep travel comfortable, safe, and shade-aware.
 
 ## Current Features
 
-- Web route planner with Leaflet and OpenStreetMap tiles
-- Expo Go mobile app using Expo SDK 54
-- Tap-to-select start and destination points
-- Place search through the backend Nominatim proxy
-- Entry-first trip flow: choose mode, start, destination, and time before the map opens
-- OSRM road routing with multiple route options, text cards, and map polylines
-- Train mode with station search, coastal and Kottayam-side rail route options, and rail-side sun analysis
-- SunCalc-based segment analysis for sun side, seat recommendation, glare, and timeline exposure
-- Open-Meteo weather lookup for UV, humidity, temperature, and rain probability
-- Real rain-window strip from hourly forecast data
-- Comfort score from weather conditions
-- Gemini-backed Thanal AI assistant for route explanations, with deterministic fallback when the key is missing
-- Saved commutes on web and mobile through the backend
-- Backend routes for routing, rail, weather, places, saved routes, assistant, and community reports
+- **Search-First Flow**: Redesigned mobile home screen starts with a clean route search panel, keeping the map clean and distraction-free.
+- **Collapsible Route Summary**: After searching, the map displays route options with a bottom summary card. Swipe/tap the up chevron to expand route details or tap the down chevron to collapse it back.
+- **Community Contributions**: Dedicated reporting/pin-drop flow to add public and petrol pump washrooms. Contribution mode displays a pulsing notification banner and auto-opens pin drop popups showing lat/lng.
+- **Washroom Pin Drop & Reviews**: Added uploader details forms to capture "Public Washroom" and "Petrol Pump Washroom" reviews/descriptions. Coordinates are automatically reverse-geocoded to street addresses.
+- **Color-Coded Accuracy Map Pins**: Existing washrooms show dynamic status-colored rings (green for clean, red for dirty) along with upvote/downvote accuracy percentages. Speed cameras are color-coded by verification status.
+- **App Feedback & Deep Linking**: Added a dedicated top-level "Feedback" tab in settings with a shortcut link directly in the search panel.
+- **Road & Rail Routing**: OSRM road routing options, train station search, and custom Kerala rail corridor engine.
+- **Comfort & Weather Analytics**: SunCalc relative sun side calculation, glare alerts, Open-Meteo UV, humidity, temperature, and rain timelines.
 
-## Tech Stack
+## Tech Stack & Resources Used
 
-| Layer | Tech |
-|---|---|
-| Mobile | React Native with Expo SDK 54 |
-| Web | React + Vite |
-| Maps | Leaflet, React Native Maps, OpenStreetMap |
-| Road Routing | OSRM public API |
-| Rail Routing | Kerala railway station and corridor engine |
-| Place Search | Nominatim proxy |
-| Sun Math | SunCalc.js |
-| Weather | Open-Meteo |
-| GenAI | Gemini API, optional through `backend/.env` |
-| Backend | Node.js + Express |
-| Database | SQLite through Node `node:sqlite` |
+| Layer | Technology | Details / Purpose |
+|---|---|---|
+| **Mobile** | React Native | Powered by Expo SDK 54 for cross-platform mobile views. |
+| **Web** | React + Vite | Fast, interactive web views with responsive mobile overrides. |
+| **Maps** | Leaflet | Map rendering with custom OpenStreetMap tile layers. |
+| **Road Routing** | OSRM API | Open Source Routing Machine to calculate driving directions and coordinates. |
+| **Place Search** | Nominatim proxy | OpenStreetMap place lookup and reverse-geocoding coordinates to addresses. |
+| **Sun Math** | SunCalc.js | Calculates solar position (azimuth, altitude) based on date, time, and coordinates. |
+| **Weather** | Open-Meteo | Pulls hourly forecasts for UV Index, relative humidity, temperature, and rain probability. |
+| **GenAI** | Gemini API | Optional Google Gemini integrations for smart travel route explanations. |
+| **Backend** | Node.js + Express | Handles place proxies, rail engines, feedback routing, and saved commutes. |
+| **Database** | SQLite | Serverless database using Node's native `node:sqlite` module to avoid compilation issues. |
 
 ## Prerequisites
 

@@ -1,7 +1,10 @@
 import { analyzeRoute, type LatLng } from "@thanal/shared";
 import { Router } from "express";
 import { z } from "zod";
-import { fetchRoadRoutes, routeCoordinates } from "../services/osrm";
+import { fetchRoadRoutes, routeCoordinates, summarizeRoute } from "../services/osrm";
+import { findCamerasOnRoute } from "../services/speedcams";
+import { calculateShadeCoverPercent } from "../services/shade";
+import { findWashroomsOnRoute } from "../services/washrooms";
 
 const router = Router();
 
@@ -18,21 +21,44 @@ const analyzeSchema = z.object({
 
 router.get("/", async (request, response, next) => {
   try {
-    const start = parseLatLng(String(request.query.start ?? ""));
-    const end = parseLatLng(String(request.query.end ?? ""));
-    const departureTime = new Date(String(request.query.departureTime ?? new Date().toISOString()));
-    const routes = await fetchRoadRoutes(start, end, 3);
+    const waypointsRaw = request.query.waypoints;
+    const waypointsStr = Array.isArray(waypointsRaw) ? waypointsRaw : [waypointsRaw];
+    const waypoints = waypointsStr.filter(Boolean).map(wp => parseLatLng(String(wp)));
+    
+    if (waypoints.length < 2) {
+      return response.status(400).json({ error: "At least two waypoints are required." });
+    }
+
+    const reqDepartureTime = new Date(String(request.query.departureTime ?? new Date().toISOString()));
+    const timeType = String(request.query.timeType ?? "depart");
+    const routes = await fetchRoadRoutes(waypoints, 3);
     const options = routes.map((route, index) => {
       const coordinates = routeCoordinates(route);
+      let label = summarizeRoute(route);
+      if (index > 0 && label === summarizeRoute(routes[0])) {
+        label = `Alternative: ${label}`;
+      }
+
+      let routeDepartureTime = reqDepartureTime;
+      if (timeType === "arrive") {
+        // route.duration is in seconds
+        routeDepartureTime = new Date(reqDepartureTime.getTime() - route.duration * 1000);
+      }
+
+      const analysis = analyzeRoute(coordinates, {
+        departureTime: routeDepartureTime,
+        averageSpeedKmh: Math.max(18, (route.distance / route.duration) * 3.6)
+      });
+      analysis.speedCameras = findCamerasOnRoute(coordinates);
+      analysis.shadeCoverPercent = calculateShadeCoverPercent(coordinates);
+      analysis.washrooms = findWashroomsOnRoute(coordinates);
+
       return {
         id: `road-${index + 1}`,
-        label: index === 0 ? "Recommended road route" : `Alternative road route ${index + 1}`,
+        label,
         route,
         coordinates,
-        analysis: analyzeRoute(coordinates, {
-          departureTime,
-          averageSpeedKmh: Math.max(18, (route.distance / route.duration) * 3.6)
-        })
+        analysis
       };
     });
     const recommended = options

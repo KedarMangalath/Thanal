@@ -12,11 +12,17 @@
     "@thanal/shared": "file:../packages/shared",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "multer": "^2.1.1",
+    "ngraph.graph": "^20.1.2",
+    "ngraph.path": "^1.6.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
     "zod": "^3.25.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "@types/multer": "^2.1.0",
     "@types/node": "^24.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"

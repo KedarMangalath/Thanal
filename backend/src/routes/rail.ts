@@ -37,7 +37,8 @@ router.post("/route", (request, response) => {
       start: body.start,
       end: body.end,
       departureTime: body.departureTime ? new Date(body.departureTime) : new Date(),
-      averageSpeedKmh: body.averageSpeedKmh
+      averageSpeedKmh: body.averageSpeedKmh,
+      timeType: String(request.query.timeType ?? "depart")
     })
   );
 });

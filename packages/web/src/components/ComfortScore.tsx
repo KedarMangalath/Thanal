@@ -1,20 +1,18 @@
 import type { ComfortScore as ComfortScoreType } from "@thanal/shared";
-import { ThermometerSun } from "lucide-react";
 
 export default function ComfortScore({ comfort }: { comfort: ComfortScoreType }) {
   return (
-    <section className="result-card comfort">
-      <div className="section-heading">
-        <span>
-          <ThermometerSun size={16} />
-          Comfort score
-        </span>
-        <strong>{comfort.score}</strong>
+    <div className="analysis-section">
+      <div className="analysis-section-header">
+        <span className="analysis-section-label">Comfort score</span>
+        <span className="analysis-section-value">{comfort.score}/100</span>
       </div>
-      <div className="score-meter">
-        <span style={{ width: `${comfort.score}%` }} />
+      <div className="comfort-bar-track">
+        <div className="comfort-bar-fill" style={{ width: `${comfort.score}%` }} />
       </div>
-      <small>{comfort.label.toUpperCase()} conditions for this departure window</small>
-    </section>
+      <span style={{ fontSize: "var(--font-size-sm)", color: "var(--text-muted)" }}>
+        {comfort.label.charAt(0).toUpperCase() + comfort.label.slice(1)} conditions
+      </span>
+    </div>
   );
 }

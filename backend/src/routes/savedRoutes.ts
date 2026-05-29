@@ -75,7 +75,7 @@ router.get("/:id/refresh", async (request, response, next) => {
       return;
     }
 
-    const routes = await fetchRoadRoutes(start, end, 3);
+    const routes = await fetchRoadRoutes([start, end], 3);
     const options = routes.map((roadRoute, index) => {
       const coordinates = routeCoordinates(roadRoute);
       const averageSpeedKmh =

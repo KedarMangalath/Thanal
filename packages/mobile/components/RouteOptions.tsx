@@ -1,20 +1,22 @@
 import type { RouteAnalysis } from "@thanal/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { RouteOption } from "../utils/api";
+import Reveal from "./Reveal";
 
 type Props = {
   options: RouteOption[];
   selectedId: string | null;
   onSelect: (option: RouteOption) => void;
+  title?: string;
 };
 
-export default function RouteOptions({ options, selectedId, onSelect }: Props) {
+export default function RouteOptions({ options, selectedId, onSelect, title = "Choose a route" }: Props) {
   if (options.length === 0) return null;
 
   return (
-    <View style={styles.card}>
+    <Reveal style={styles.card}>
       <View style={styles.headingRow}>
-        <Text style={styles.label}>Route options</Text>
+        <Text style={styles.label}>{title}</Text>
         <Text style={styles.count}>{options.length}</Text>
       </View>
       {options.map((option) => (
@@ -30,9 +32,10 @@ export default function RouteOptions({ options, selectedId, onSelect }: Props) {
             {formatSeat(option.analysis.recommendedSeat)}
           </Text>
           {option.serviceHint ? <Text style={styles.optionHint}>{option.serviceHint}</Text> : null}
+          <Text style={styles.tapHint}>Tap to open map</Text>
         </Pressable>
       ))}
-    </View>
+    </Reveal>
   );
 }
 
@@ -43,9 +46,9 @@ function formatSeat(seat: RouteAnalysis["recommendedSeat"]) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "rgba(255,255,255,0.94)",
     borderColor: "#d7e0db",
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 8,
     padding: 12
@@ -64,15 +67,15 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   option: {
-    backgroundColor: "#f6f8f6",
+    backgroundColor: "#f8faf9",
     borderColor: "#d7e0db",
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     gap: 3,
     padding: 12
   },
   active: {
-    backgroundColor: "#f0edff",
+    backgroundColor: "#eef2ff",
     borderColor: "#8b7cf6"
   },
   optionLabel: {
@@ -93,5 +96,10 @@ const styles = StyleSheet.create({
     color: "#5b35f0",
     fontSize: 12,
     fontWeight: "700"
+  },
+  tapHint: {
+    color: "#0f766e",
+    fontSize: 12,
+    fontWeight: "800"
   }
 });

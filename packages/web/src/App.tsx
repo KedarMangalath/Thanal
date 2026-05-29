@@ -5,43 +5,38 @@ import {
   type RouteAnalysis,
   type WeatherSnapshot
 } from "@thanal/shared";
-import {
-  Bike,
-  BookmarkPlus,
-  Bus,
-  Clock,
-  MapPin,
-  Navigation,
-  Route,
-  Search,
-  Sparkles,
-  Train,
-  Trash2
-} from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import brandLogoUrl from "../../../assets/Thanal_Logo.png";
-import brandTextUrl from "../../../assets/Thanal_text_png.png";
+import { Bike, BookmarkPlus, Bus, ChevronDown, ChevronRight, ChevronUp, Clock, MapPin, Train, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import brandLogoUrl from "../../../assets/Thanal_text_png.png";
 import ComfortScore from "./components/ComfortScore";
+import LayerToggle, { type MapLayer } from "./components/LayerToggle";
+import LoadingDots from "./components/LoadingDots";
 import MapPicker from "./components/MapPicker";
 import RainWindow from "./components/RainWindow";
+import SearchPanel from "./components/SearchPanel";
 import SunTimeline from "./components/SunTimeline";
+import SunTrajectoryChart from "./components/SunTrajectoryChart";
+import ThemeToggle, { useTheme } from "./components/ThemeToggle";
+import TripInsight from "./components/TripInsight";
+import SettingsModal, { type Language } from "./components/SettingsModal";
+import CookiePrompt from "./components/CookiePrompt";
+import AdminDashboard from "./components/AdminDashboard";
+import WelcomeTour from "./components/WelcomeTour";
 import {
-  askAssistant,
   deleteSavedRoute,
   fetchRailRoute,
   fetchRouteOptions,
   fetchSavedRoutes,
   fetchWeather,
+  reverseGeocode,
   saveRoute,
-  searchPlaces,
-  searchRailStations,
-  type PlaceResult,
   type RouteOption,
   type SavedRoute
 } from "./services/api";
 
 type TravelMode = "bus" | "bike" | "walk" | "train";
-type FlowStage = "entry" | "routes" | "map";
 
 function toDateTimeLocal(date: Date): string {
   const offset = date.getTimezoneOffset() * 60000;
@@ -49,572 +44,783 @@ function toDateTimeLocal(date: Date): string {
 }
 
 export default function App() {
-  const [start, setStart] = useState<LatLng | null>(null);
-  const [end, setEnd] = useState<LatLng | null>(null);
-  const [route, setRoute] = useState<LatLng[]>([]);
+  const { theme, toggle: toggleTheme } = useTheme();
+
+  // Location state
+  const [waypoints, setWaypoints] = useState<{ point: LatLng | null; name: string }[]>([
+    { point: null, name: "" },
+    { point: null, name: "" }
+  ]);
+
+  const start = waypoints[0]?.point ?? null;
+  const end = waypoints[waypoints.length - 1]?.point ?? null;
+  const startName = waypoints[0]?.name ?? "";
+  const endName = waypoints[waypoints.length - 1]?.name ?? "";
+
+  // Feature Toggles
+  const [features, setFeatures] = useState({
+    cameras: localStorage.getItem("thanal_feat_cameras") === "true", // OFF by default
+    washrooms: localStorage.getItem("thanal_feat_washrooms") === "true", // OFF by default
+    rain: localStorage.getItem("thanal_feat_rain") !== "false",
+    sun: localStorage.getItem("thanal_feat_sun") !== "false"
+  });
+
+  const toggleFeature = (key: keyof typeof features) => {
+    setFeatures(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem(`thanal_feat_${key}`, String(next[key]));
+      return next;
+    });
+  };
+
+  // Route state
   const [routeOptions, setRouteOptions] = useState<RouteOption[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [route, setRoute] = useState<LatLng[]>([]);
   const [analysis, setAnalysis] = useState<RouteAnalysis | null>(null);
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
-  const [departureTime, setDepartureTime] = useState(toDateTimeLocal(new Date()));
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<TravelMode>("bus");
-  const [flowStage, setFlowStage] = useState<FlowStage>("entry");
-  const [status, setStatus] = useState("Choose mode, start, destination, and departure time.");
-  const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
-  const [placeQuery, setPlaceQuery] = useState("");
-  const [placeTarget, setPlaceTarget] = useState<"start" | "end">("start");
-  const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
-  const [assistantMessage, setAssistantMessage] = useState("Which route should I pick?");
-  const [assistantAnswer, setAssistantAnswer] = useState("");
-  const [isAssistantLoading, setIsAssistantLoading] = useState(false);
 
-  const comfort = useMemo<ComfortScoreType | null>(() => {
-    return weather ? calculateComfortScore(weather) : null;
-  }, [weather]);
+  // UI state
+  const [mode, setMode] = useState<TravelMode>("train");
+  const [departureTime, setDepartureTime] = useState(toDateTimeLocal(new Date()));
+  const [timeType, setTimeType] = useState<"depart" | "arrive">("depart");
+  const [mapLayer, setMapLayer] = useState<MapLayer>("standard");
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
+  const [showSaved, setShowSaved] = useState(false);
+  const [status, setStatus] = useState("");
+  const [language, setLanguage] = useState<Language>("english");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"preferences" | "saved" | "about" | "feedback">("preferences");
+  const [mobileView, setMobileView] = useState<"search" | "map" | "details">("search");
+
+  function openSettings(tab: "preferences" | "saved" | "about" | "feedback" = "preferences") {
+    setSettingsTab(tab);
+    setIsSettingsOpen(true);
+  }
+  const [reportLocation, setReportLocation] = useState<LatLng | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  
+  const sidebarRef = useRef<HTMLElement>(null);
+  
+  const [cookieConsent, setCookieConsent] = useState<boolean | null>(() => {
+    const saved = localStorage.getItem("thanal_cookie_consent");
+    return saved ? saved === "true" : null;
+  });
+
+  const handleCookieConsentChange = (consent: boolean) => {
+    setCookieConsent(consent);
+    localStorage.setItem("thanal_cookie_consent", String(consent));
+  };
+
+  const comfort = useMemo<ComfortScoreType | null>(
+    () => (weather ? calculateComfortScore(weather) : null),
+    [weather]
+  );
+
+  // Auto-analyze trigger ref to prevent double-fire
+  const analyzeTriggered = useRef(false);
+
+  const [isAdminOpen, setIsAdminOpen] = useState(() => window.location.hash === "#admin");
+  const [isReportingMode, setIsReportingMode] = useState(false);
 
   useEffect(() => {
-    fetchSavedRoutes()
-      .then(setSavedRoutes)
-      .catch(() => setSavedRoutes([]));
+    const handleRouting = () => {
+      setIsAdminOpen(window.location.hash === "#admin" || window.location.pathname === "/admin");
+    };
+    handleRouting(); // check on mount
+    window.addEventListener("hashchange", handleRouting);
+    window.addEventListener("popstate", handleRouting);
+    return () => {
+      window.removeEventListener("hashchange", handleRouting);
+      window.removeEventListener("popstate", handleRouting);
+    };
   }, []);
 
-  function resetAnalysis(nextStage: FlowStage = "entry") {
+  // Load saved routes on mount
+  useEffect(() => {
+    fetchSavedRoutes().then(setSavedRoutes).catch(() => setSavedRoutes([]));
+  }, []);
+
+  // Auto-analyze when inputs change
+  useEffect(() => {
+    if (waypoints.filter(w => w.point !== null).length >= 2) {
+      void analyzeTrip();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waypoints, mode, departureTime, timeType]);
+
+  function resetAnalysis() {
     setRoute([]);
     setRouteOptions([]);
     setSelectedRouteId(null);
     setAnalysis(null);
     setWeather(null);
-    setAssistantAnswer("");
-    setFlowStage(nextStage);
+    setShowAnalysis(false);
+    setStatus("");
+    setReportLocation(null);
+    setShowReportModal(false);
   }
 
-  async function analyzeTrip() {
-    if (!start || !end) {
-      setStatus("Choose both start and destination first.");
-      return;
+  function resetAll() {
+    resetAnalysis();
+    setWaypoints([
+      { name: "", point: null },
+      { name: "", point: null }
+    ]);
+    setMobileView("search");
+    setIsReportingMode(false);
+    setReportLocation(null);
+    setShowReportModal(false);
+  }
+
+  useEffect(() => {
+    if ((isLoading || routeOptions.length > 0) && mobileView === "map") {
+      setTimeout(() => {
+        sidebarRef.current?.scrollTo({ top: sidebarRef.current.scrollHeight, behavior: 'smooth' });
+      }, 100);
     }
+  }, [isLoading, routeOptions.length, mobileView]);
+
+  async function analyzeTrip() {
+    const validPoints = waypoints.map(w => w.point).filter((p): p is LatLng => p !== null);
+    if (validPoints.length < 2) return;
 
     setIsLoading(true);
-    setStatus(mode === "train" ? "Finding rail options." : "Finding road options.");
+    setStatus(mode === "train" ? "Finding rail routes…" : "Finding routes…");
 
     try {
       const departure = new Date(departureTime);
+
       if (mode === "train") {
-        const rail = await fetchRailRoute({ start, end, departureTime: departure.toISOString() });
-        const option =
-          rail.options.find((candidate) => candidate.id === rail.recommendedOptionId) ?? rail.options[0];
+        const rail = await fetchRailRoute({ 
+          start: validPoints[0], 
+          end: validPoints[validPoints.length - 1], 
+          departureTime: departure.toISOString(),
+          timeType
+        });
+        const option = rail.options.find((c) => c.id === rail.recommendedOptionId) ?? rail.options[0];
 
         setRoute(option?.coordinates ?? rail.coordinates);
         setRouteOptions(rail.options);
         setSelectedRouteId(option?.id ?? rail.recommendedOptionId);
         setAnalysis(option?.analysis ?? rail.analysis);
-        setWeather(await fetchWeather(start));
-        setFlowStage("routes");
-        setStatus(`${rail.options.length} rail option${rail.options.length === 1 ? "" : "s"} found. Pick one.`);
-        return;
+        setWeather(await fetchWeather(validPoints[0]));
+        setStatus(`${rail.options.length} rail route${rail.options.length === 1 ? "" : "s"} found`);
+      } else {
+        const response = await fetchRouteOptions({ 
+          waypoints: validPoints, 
+          departureTime: departure.toISOString(),
+          timeType 
+        });
+        const option = response.options.find((c) => c.id === response.recommendedOptionId) ?? response.options[0];
+
+        setRoute(option?.coordinates ?? []);
+        setRouteOptions(response.options);
+        setSelectedRouteId(option?.id ?? response.recommendedOptionId);
+        setAnalysis(option?.analysis ?? null);
+        setWeather(await fetchWeather(validPoints[0]));
+        setStatus(`${response.options.length} route${response.options.length === 1 ? "" : "s"} found`);
       }
-
-      const response = await fetchRouteOptions({
-        start,
-        end,
-        departureTime: departure.toISOString()
-      });
-      const option =
-        response.options.find((candidate) => candidate.id === response.recommendedOptionId) ??
-        response.options[0];
-
-      setRoute(option?.coordinates ?? []);
-      setRouteOptions(response.options);
-      setSelectedRouteId(option?.id ?? response.recommendedOptionId);
-      setAnalysis(option?.analysis ?? null);
-      setWeather(await fetchWeather(start));
-      setFlowStage("routes");
-      setStatus(`${response.options.length} route option${response.options.length === 1 ? "" : "s"} found. Pick one.`);
+      setMobileView("map");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not analyze this route.");
+      setStatus(error instanceof Error ? error.message : "Could not analyze route");
     } finally {
       setIsLoading(false);
     }
   }
 
-  function pickRouteOption(option: RouteOption, openMap = false) {
+  function pickRoute(option: RouteOption) {
     setSelectedRouteId(option.id);
     setRoute(option.coordinates);
     setAnalysis(option.analysis);
-    if (openMap) {
-      setFlowStage("map");
-      setStatus("Map opened with your selected route.");
-    }
+    setShowAnalysis(true);
+    setMobileView("details");
   }
 
-  function handleMapPick(point: LatLng) {
-    if (!start || (start && end)) {
-      setStart(point);
-      setEnd(null);
-      resetAnalysis("entry");
-      setStatus("Start changed. Choose destination again.");
-      return;
-    }
-
-    setEnd(point);
-    resetAnalysis("entry");
-    setStatus("Destination changed. Analyze again.");
+  function handleWaypointChange(index: number, point: LatLng | null, name: string) {
+    const next = [...waypoints];
+    next[index] = { point, name };
+    setWaypoints(next);
+    resetAnalysis();
   }
 
-  function clearRoute() {
-    setStart(null);
-    setEnd(null);
-    resetAnalysis("entry");
-    setStatus("Route cleared. Search a start and destination.");
+  function handleAddWaypoint() {
+    if (waypoints.length >= 5) return;
+    setWaypoints([...waypoints.slice(0, -1), { point: null, name: "" }, waypoints[waypoints.length - 1]]);
+    resetAnalysis();
+  }
+
+  function handleRemoveWaypoint(index: number) {
+    if (waypoints.length <= 2) return;
+    const next = [...waypoints];
+    next.splice(index, 1);
+    setWaypoints(next);
+    resetAnalysis();
+  }
+
+  function handleSwap(i: number, j: number) {
+    const next = [...waypoints];
+    const temp = next[i];
+    next[i] = next[j];
+    next[j] = temp;
+    setWaypoints(next);
+    resetAnalysis();
+  }
+
+  async function handleMapPick(point: LatLng) {
+    if (waypoints.every(w => w.point !== null)) return; // all full
+
+    const name = await reverseGeocode(point).catch(() => `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`);
+    const emptyIndex = waypoints.findIndex(w => w.point === null);
+    
+    if (emptyIndex !== -1) {
+      handleWaypointChange(emptyIndex, point, name);
+      if (emptyIndex === 0) setStatus("Start set. Tap destination on map or search.");
+    }
   }
 
   async function saveCurrentRoute() {
-    if (!start || !end) {
-      setStatus("Choose both start and destination before saving.");
-      return;
-    }
-
+    if (!start || !end) return;
     try {
       const saved = await saveRoute({
-        name: `${modeLabel(mode)} route ${new Date(departureTime).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit"
-        })}`,
+        name: `${startName || "Start"} → ${endName || "End"}`,
         mode,
         start,
         end,
         departureTime: new Date(departureTime).toISOString()
       });
-
       setSavedRoutes((current) => [saved, ...current]);
-      setStatus("Commute saved.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not save commute.");
+      setStatus("Commute saved");
+    } catch {
+      setStatus("Could not save commute");
     }
-  }
-
-  async function runPlaceSearch() {
-    if (placeQuery.trim().length < 2) {
-      setStatus("Type at least two characters to search.");
-      return;
-    }
-
-    try {
-      setStatus(mode === "train" ? "Searching railway stations." : "Searching places.");
-      setPlaceResults(
-        mode === "train" ? await searchRailStations(placeQuery) : await searchPlaces(placeQuery)
-      );
-    } catch (error) {
-      setPlaceResults([]);
-      setStatus(error instanceof Error ? error.message : "Place search failed.");
-    }
-  }
-
-  function selectPlace(place: PlaceResult) {
-    const point = { lat: Number(place.lat), lng: Number(place.lon) };
-    if (placeTarget === "start") {
-      setStart(point);
-      setPlaceTarget("end");
-    } else {
-      setEnd(point);
-    }
-
-    resetAnalysis("entry");
-    setPlaceResults([]);
-    setPlaceQuery("");
-    setStatus(`${placeTarget === "start" ? "Start" : "Destination"} set.`);
   }
 
   async function removeSavedRoute(id: number) {
     try {
       await deleteSavedRoute(id);
-      setSavedRoutes((current) => current.filter((saved) => saved.id !== id));
-      setStatus("Saved commute deleted.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not delete commute.");
+      setSavedRoutes((current) => current.filter((s) => s.id !== id));
+    } catch {
+      setStatus("Could not delete commute");
     }
   }
 
-  async function runAssistant() {
-    setIsAssistantLoading(true);
-    setAssistantAnswer("");
-
-    try {
-      const response = await askAssistant({
-        message: assistantMessage,
-        mode,
-        start,
-        end,
-        departureTime: new Date(departureTime).toISOString()
-      });
-      setAssistantAnswer(`${response.answer}\n\nModel: ${response.model}. Tools: ${response.toolTrace.length}.`);
-    } catch (error) {
-      setAssistantAnswer(error instanceof Error ? error.message : "Assistant failed.");
-    } finally {
-      setIsAssistantLoading(false);
-    }
+  function loadSavedRoute(saved: SavedRoute) {
+    setWaypoints([
+      { point: { lat: saved.startLat, lng: saved.startLng }, name: saved.name.split("→")[0]?.trim() || "Saved start" },
+      { point: { lat: saved.endLat, lng: saved.endLng }, name: saved.name.split("→")[1]?.trim() || "Saved end" }
+    ]);
+    setMode(saved.mode);
+    if (saved.departureTime) setDepartureTime(toDateTimeLocal(new Date(saved.departureTime)));
+    resetAnalysis();
   }
+
+  const hasRoutes = routeOptions.length > 0;
+  const activeRoute = routeOptions.find(r => r.id === selectedRouteId);
 
   return (
-    <main className="app-shell">
-      <section className={`journey-shell stage-${flowStage}`}>
-        <aside className="control-panel flow-panel">
-          <Header />
+    <main className={`app-shell 
+      ${showAnalysis && analysis ? "has-analysis" : ""} 
+      ${hasRoutes ? "has-routes" : ""}
+      mobile-view-${mobileView} 
+      ${isReportingMode ? "reporting-mode" : ""} 
+      ${reportLocation ? "has-report-pin" : ""}
+      ${theme}
+    `}>
+      {/* Map (always fills viewport) */}
+      <div className="map-layer">
+        <MapPicker
+          waypoints={waypoints.map(w => w.point)}
+          route={route}
+          routes={routeOptions}
+          activeRouteId={selectedRouteId}
+          layer={mapLayer}
+          theme={theme}
+          onPick={handleMapPick}
+          isReportingMode={isReportingMode}
+          setIsReportingMode={setIsReportingMode}
+          reportLocation={reportLocation}
+          setReportLocation={setReportLocation}
+          showReportModal={showReportModal}
+          setShowReportModal={setShowReportModal}
+          speedCameras={features.cameras ? activeRoute?.analysis.speedCameras : undefined}
+          analysis={activeRoute?.analysis}
+        />
+      </div>
 
-          <div className="mode-tabs" aria-label="Travel mode">
-            <ModeButton active={mode === "bus"} icon={<Bus size={16} />} label="Car/Bus" onClick={() => setMode("bus")} />
-            <ModeButton active={mode === "bike"} icon={<Bike size={16} />} label="Bike" onClick={() => setMode("bike")} />
-            <ModeButton active={mode === "train"} icon={<Train size={16} />} label="Train" onClick={() => setMode("train")} />
+      {/* Floating sidebar */}
+      <aside className="sidebar" id="tutorial-search" ref={sidebarRef}>
+        {/* Search card */}
+        <div className="glass-card search-panel">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+              <div style={{ height: '32px', display: 'flex', alignItems: 'center' }}>
+                <img alt="Thanal" src={brandLogoUrl} style={{ height: '72px', width: 'auto', objectFit: 'contain', marginLeft: '-14px' }} />
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                Beat the heat. Grab the shady seat.
+              </div>
+            </div>
           </div>
 
-          <label className="field">
-            <span>
-              <Clock size={16} />
-              Departure
-            </span>
-            <input
-              type="datetime-local"
-              value={departureTime}
-              onChange={(event) => setDepartureTime(event.target.value)}
-            />
-          </label>
+          <SearchPanel
+            mode={mode}
+            waypoints={waypoints}
+            onWaypointChange={handleWaypointChange}
+            onAddWaypoint={handleAddWaypoint}
+            onRemoveWaypoint={handleRemoveWaypoint}
+            onSwap={handleSwap}
+          />
 
-          <section className="search-panel">
-            <div className="segmented-control" aria-label="Search target">
-              <button className={placeTarget === "start" ? "active" : ""} type="button" onClick={() => setPlaceTarget("start")}>
-                Start
-              </button>
-              <button className={placeTarget === "end" ? "active" : ""} type="button" onClick={() => setPlaceTarget("end")}>
-                End
-              </button>
+          <div className="mode-time-bar">
+            <div className="mode-pills">
+              <ModeButton active={mode === "train"} icon={<Train size={14} />} label="Train" onClick={() => { setMode("train"); }} />
+              <ModeButton active={mode === "bike"} icon={<Bike size={14} />} label="Bike" onClick={() => { setMode("bike"); }} />
+              <ModeButton active={mode === "bus"} icon={<Bus size={14} />} label="Car/Bus" onClick={() => { setMode("bus"); }} />
             </div>
-            <div className="search-row">
-              <input
-                aria-label="Place search"
-                placeholder={mode === "train" ? "Search railway station" : "Search place"}
-                value={placeQuery}
-                onChange={(event) => setPlaceQuery(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void runPlaceSearch();
+            <label className="departure-compact" title="Time config">
+              <select 
+                value={timeType} 
+                onChange={e => setTimeType(e.target.value as "depart" | "arrive")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-primary)",
+                  fontWeight: 500,
+                  fontSize: "var(--font-size-sm)",
+                  cursor: "pointer",
+                  outline: "none"
                 }}
+              >
+                <option value="depart">Depart at</option>
+                <option value="arrive">Arrive by</option>
+              </select>
+              <DatePicker
+                selected={new Date(departureTime)}
+                onChange={(date: Date | null) => {
+                  if (date) setDepartureTime(toDateTimeLocal(date));
+                }}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="Time"
+                dateFormat="MMM d, h:mm aa"
+                className="custom-datepicker-input"
               />
-              <button className="secondary icon-button" type="button" onClick={runPlaceSearch}>
-                <Search size={17} />
-              </button>
+            </label>
+          </div>
+
+          {start && end && (
+            <button
+              type="button"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "4px 10px",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--text-secondary)",
+                fontSize: "var(--font-size-sm)",
+                cursor: "pointer",
+                minHeight: "32px"
+              }}
+              onClick={saveCurrentRoute}
+            >
+              <BookmarkPlus size={13} />
+              Save commute
+            </button>
+          )}
+          <button 
+            className="secondary-btn" 
+            onClick={() => {
+              setMobileView("map");
+              setIsReportingMode(true);
+            }}
+            style={{ width: '100%', padding: '12px', background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '12px', fontWeight: 600, marginTop: '16px' }}
+          >
+            Community Contribution
+          </button>
+          
+          {/* Quick-toggle checkboxes for map layers */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '12px', justifyContent: 'center' }}>
+            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Show:</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              <input 
+                type="checkbox" 
+                checked={features.cameras} 
+                onChange={() => toggleFeature("cameras")}
+                style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+              />
+              Cameras
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              <input 
+                type="checkbox" 
+                checked={features.washrooms} 
+                onChange={() => toggleFeature("washrooms")}
+                style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+              />
+              Washrooms
+            </label>
+          </div>
+          
+          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+            <button 
+              type="button"
+              onClick={() => openSettings("feedback")}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontWeight: 500 }}
+            >
+              Found a bug or have a suggestion? Let us know
+            </button>
+          </div>
+        </div>
+        
+
+        {/* Status */}
+        {status && <p className="status-line">{status}</p>}
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="glass-card">
+            <LoadingDots />
+          </div>
+        )}
+
+        {/* Trip Insight (Desktop) */}
+        {hasRoutes && !isLoading && (
+          <div className="desktop-only" style={{ width: '100%' }}>
+            <TripInsight
+              mode={mode}
+              start={start}
+              end={end}
+              departureTime={new Date(departureTime).toISOString()}
+              analysis={analysis}
+              weather={weather}
+              language={language}
+            />
+          </div>
+        )}
+
+        {/* Route cards */}
+        {hasRoutes && !isLoading && (
+          <div className="glass-card route-cards">
+            <div className="route-cards-header">
+              <span className="route-cards-title">Routes</span>
+              <span className="route-cards-count">{routeOptions.length}</span>
             </div>
-            {placeResults.length > 0 ? (
-              <div className="place-results">
-                {placeResults.map((place) => (
-                  <button className="place-result" key={place.place_id} type="button" onClick={() => selectPlace(place)}>
-                    {place.display_name}
+            {routeOptions.map((option, index) => (
+              <button
+                className={`route-card ${selectedRouteId === option.id ? "active" : ""}`}
+                key={option.id}
+                type="button"
+                onClick={() => pickRoute(option)}
+              >
+                <div
+                  className="route-color-bar"
+                  style={{ background: ["var(--route-1)", "var(--route-2)", "var(--route-3)"][index % 3] }}
+                />
+                <div className="route-card-info">
+                  <div className="route-card-label">{option.label}</div>
+                  <div className="route-card-meta">
+                    <span>{(option.analysis.totalDistanceMeters / 1000).toFixed(1)} km</span>
+                    {timeType === "arrive" && option.analysis.departureTime && (
+                      <span> · Leave at: {new Date(option.analysis.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    )}
+                    {option.serviceHint && <span> · {option.serviceHint}</span>}
+                  </div>
+                </div>
+                <div className="route-card-duration">{Math.round(option.analysis.totalDurationMinutes)} min</div>
+                <div className="route-card-seat">{formatSeat(option.analysis.recommendedSeat)}</div>
+                <div style={{ marginLeft: 'var(--space-sm)', color: 'var(--text-muted)' }}>
+                  <ChevronRight size={18} />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Saved commutes */}
+
+        {/* Empty state */}
+        {!hasRoutes && !isLoading && !start && !end && (
+          <div className="glass-card empty-state">
+            <MapPin size={18} />
+            <span>Search or tap the map to set start and destination</span>
+          </div>
+        )}
+      </aside>
+
+      {/* Mobile Details Screen — must be outside sidebar so it isn't hidden */}
+      {analysis && mobileView === "details" && (
+        <div className="mobile-details-screen">
+          <div className="mobile-details-header">
+            <button className="icon-btn" onClick={() => setMobileView("map")} title="Collapse details">
+              <ChevronDown size={22} />
+            </button>
+            <h2 style={{ fontSize: '16px', margin: 0, fontWeight: 600 }}>Route Details</h2>
+            <div style={{ width: 36 }} /> {/* spacer */}
+          </div>
+          
+          <div className="mobile-details-body">
+            {/* Route Selection List for Mobile */}
+            {routeOptions.length > 1 && (
+              <div className="glass-card route-cards" style={{ marginBottom: '16px' }}>
+                <div className="route-cards-header">
+                  <span className="route-cards-title">Route Options</span>
+                  <span className="route-cards-count">{routeOptions.length}</span>
+                </div>
+                {routeOptions.map((option, index) => (
+                  <button
+                    className={`route-card ${selectedRouteId === option.id ? "active" : ""}`}
+                    key={option.id}
+                    type="button"
+                    onClick={() => pickRoute(option)}
+                  >
+                    <div
+                      className="route-color-bar"
+                      style={{ background: ["var(--route-1)", "var(--route-2)", "var(--route-3)"][index % 3] }}
+                    />
+                    <div className="route-card-info">
+                      <div className="route-card-label">{option.label}</div>
+                      <div className="route-card-meta">
+                        <span>{(option.analysis.totalDistanceMeters / 1000).toFixed(1)} km</span>
+                        {timeType === "arrive" && option.analysis.departureTime && (
+                          <span> · Leave at: {new Date(option.analysis.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        )}
+                        {option.serviceHint && <span> · {option.serviceHint}</span>}
+                      </div>
+                    </div>
+                    <div className="route-card-duration">{Math.round(option.analysis.totalDurationMinutes)} min</div>
+                    <div className="route-card-seat">{formatSeat(option.analysis.recommendedSeat)}</div>
                   </button>
                 ))}
               </div>
-            ) : null}
-          </section>
+            )}
+            {/* Bike Mode specific layout */}
+            {mode === "bike" && (
+              <>
+                {comfort && <ComfortScore comfort={comfort} />}
+                {features.rain && weather && <RainWindow probability={weather.precipitationProbability ?? 0} timeline={weather.rainTimeline} />}
+                <TripInsight
+                  mode={mode}
+                  start={start}
+                  end={end}
+                  departureTime={new Date(departureTime).toISOString()}
+                  analysis={analysis}
+                  weather={weather}
+                  language={language}
+                />
+                <div className="metric-row">
+                  <div className="metric-item">
+                    <div className="metric-label">Distance</div>
+                    <div className="metric-value">{(analysis.totalDistanceMeters / 1000).toFixed(1)} km</div>
+                  </div>
+                  <div className="metric-item">
+                    <div className="metric-label">Duration</div>
+                    <div className="metric-value">{Math.round(analysis.totalDurationMinutes)} min</div>
+                  </div>
+                </div>
+                {analysis.glareWindows && analysis.glareWindows.length > 0 && (
+                  <div className="glare-alert">
+                    <div className="glare-alert-title">⚠ Glare warning</div>
+                    <div className="glare-alert-body">
+                      Sun is close to forward heading on {analysis.glareWindows.length} segment{analysis.glareWindows.length > 1 ? "s" : ""}.
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
-          <div className="point-list">
-            <PointRow label="Start" point={start} />
-            <PointRow label="Destination" point={end} />
+            {/* Car/Bus/Train Mode specific layout */}
+            {mode !== "bike" && (
+              <>
+                <div className="seat-hero">
+                  <div className="seat-hero-label">Recommended seat</div>
+                  <div className="seat-hero-value">{formatSeat(analysis.recommendedSeat)}</div>
+                  <div className="seat-hero-detail">
+                    {Math.round(analysis.directSunMinutesBySide?.left ?? 0)} min sun left · {Math.round(analysis.directSunMinutesBySide?.right ?? 0)} min sun right
+                  </div>
+                </div>
+                <TripInsight
+                  mode={mode}
+                  start={start}
+                  end={end}
+                  departureTime={new Date(departureTime).toISOString()}
+                  analysis={analysis}
+                  weather={weather}
+                  language={language}
+                />
+                {features.sun && <SunTimeline analysis={analysis} />}
+                <SunTrajectoryChart analysis={analysis} />
+                <div className="metric-row">
+                  <div className="metric-item">
+                    <div className="metric-label">Distance</div>
+                    <div className="metric-value">{(analysis.totalDistanceMeters / 1000).toFixed(1)} km</div>
+                  </div>
+                  <div className="metric-item">
+                    <div className="metric-label">Duration</div>
+                    <div className="metric-value">{Math.round(analysis.totalDurationMinutes)} min</div>
+                  </div>
+                </div>
+                {analysis.glareWindows && analysis.glareWindows.length > 0 && (
+                  <div className="glare-alert">
+                    <div className="glare-alert-title">⚠ Glare warning</div>
+                    <div className="glare-alert-body">
+                      Sun is close to forward heading on {analysis.glareWindows.length} segment{analysis.glareWindows.length > 1 ? "s" : ""}.
+                    </div>
+                  </div>
+                )}
+                {comfort && <ComfortScore comfort={comfort} />}
+                {features.rain && weather && <RainWindow probability={weather.precipitationProbability ?? 0} timeline={weather.rainTimeline} />}
+              </>
+            )}
           </div>
+        </div>
+      )}
 
-          <div className="action-row">
-            <button className="secondary" type="button" onClick={clearRoute}>
-              Clear
-            </button>
-            <button className="secondary" type="button" onClick={saveCurrentRoute}>
-              <BookmarkPlus size={16} />
-              Save
-            </button>
-            <button className="primary analyze-button" type="button" onClick={analyzeTrip} disabled={isLoading}>
-              <Navigation size={16} />
-              {isLoading ? "Analyzing" : "Find routes"}
-            </button>
-          </div>
-
-          <p className="status-line">{status}</p>
-
-          {flowStage === "entry" ? <IntroState mode={mode} /> : null}
-          {flowStage === "routes" ? (
-            <RouteOptionList options={routeOptions} selectedRouteId={selectedRouteId} onSelect={(option) => pickRouteOption(option, true)} title="Pick your route" />
-          ) : null}
-
-          <AssistantCard
-            answer={assistantAnswer}
-            isLoading={isAssistantLoading}
-            message={assistantMessage}
-            onAsk={runAssistant}
-            onMessageChange={setAssistantMessage}
-          />
-
-          {flowStage !== "map" ? (
-            <SavedRoutes
-              routes={savedRoutes}
-              onLoad={(saved) => {
-                setStart({ lat: saved.startLat, lng: saved.startLng });
-                setEnd({ lat: saved.endLat, lng: saved.endLng });
-                setMode(saved.mode);
-                if (saved.departureTime) setDepartureTime(toDateTimeLocal(new Date(saved.departureTime)));
-                resetAnalysis("entry");
-                setStatus(`${saved.name} loaded. Find routes when ready.`);
-              }}
-              onRemove={removeSavedRoute}
-            />
-          ) : null}
-        </aside>
-
-        {flowStage === "map" ? (
-          <section className="map-stage">
-            <div className="map-region">
-              <MapPicker
-                start={start}
-                end={end}
-                route={route}
-                routes={routeOptions}
-                activeRouteId={selectedRouteId}
-                onPick={handleMapPick}
-              />
-            </div>
-            <aside className="result-panel">
-              <div className="result-panel-head">
-                <button className="secondary" type="button" onClick={() => setFlowStage("routes")}>
-                  Change route
-                </button>
-                <button className="secondary" type="button" onClick={clearRoute}>
-                  New trip
-                </button>
+      {/* Desktop Right Sidebar */}
+      {showAnalysis && analysis && (
+        <aside className="right-sidebar desktop-only">
+          <div className="glass-card analysis-panel">
+            {/* Seat recommendation hero */}
+            <div className="seat-hero">
+              <div className="seat-hero-label">Recommended seat</div>
+              <div className="seat-hero-value">{formatSeat(analysis.recommendedSeat)}</div>
+              <div className="seat-hero-detail">
+                {Math.round(analysis.directSunMinutesBySide.left)} min sun left · {Math.round(analysis.directSunMinutesBySide.right)} min sun right
               </div>
-              <RouteOptionList options={routeOptions} selectedRouteId={selectedRouteId} onSelect={(option) => pickRouteOption(option)} compact title="Route options" />
-              <ResultDetails analysis={analysis} comfort={comfort} weather={weather} />
-            </aside>
-          </section>
-        ) : null}
-      </section>
-    </main>
-  );
-}
+            </div>
 
-function Header() {
-  return (
-    <div className="brand-row">
-      <span className="brand-mark">
-        <img alt="" src={brandLogoUrl} />
-      </span>
-      <div>
-        <img alt="Thanal" className="brand-wordmark" src={brandTextUrl} />
-        <p>Sun-aware travel for Kerala routes</p>
+            {features.sun && <SunTimeline analysis={analysis} />}
+            <SunTrajectoryChart analysis={analysis} />
+
+            <div className="metric-row">
+              <div className="metric-item">
+                <div className="metric-label">Distance</div>
+                <div className="metric-value">{(analysis.totalDistanceMeters / 1000).toFixed(1)} km</div>
+              </div>
+              <div className="metric-item">
+                <div className="metric-label">Duration</div>
+                <div className="metric-value">{Math.round(analysis.totalDurationMinutes)} min</div>
+              </div>
+            </div>
+
+            {analysis.glareWindows.length > 0 && (
+              <div className="glare-alert">
+                <div className="glare-alert-title">⚠ Glare warning</div>
+                <div className="glare-alert-body">
+                  Sun is close to forward heading on {analysis.glareWindows.length} segment{analysis.glareWindows.length > 1 ? "s" : ""}.
+                </div>
+              </div>
+            )}
+
+            {comfort && <ComfortScore comfort={comfort} />}
+            {features.rain && weather && <RainWindow probability={weather.precipitationProbability ?? 0} timeline={weather.rainTimeline} />}
+          </div>
+        </aside>
+      )}
+
+      {/* Map-only controls & Overlays */}
+      {mobileView === "map" && hasRoutes && (
+        <div className="mobile-route-summary-sheet" onClick={() => {
+          setShowAnalysis(true);
+          setMobileView("details");
+        }}>
+          <div className="sheet-drag-handle" />
+          <div className="sheet-content" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0 8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="sheet-title">{routeOptions.length} route{routeOptions.length > 1 ? "s" : ""} found</span>
+              <span className="sheet-subtitle">Tap to view options and details</span>
+            </div>
+            <ChevronUp size={20} style={{ color: 'var(--text-secondary)' }} />
+          </div>
+        </div>
+      )}
+
+      {mobileView === "map" && hasRoutes && (
+        <button 
+          className="top-report-btn glass-btn"
+          onClick={() => {
+            setIsReportingMode(true);
+            setMobileView("map");
+          }}
+        >
+          Contribute Location
+        </button>
+      )}
+
+      {/* Map controls (floating top-right) */}
+      <div className="map-controls">
+        <LayerToggle active={mapLayer} onChange={setMapLayer} />
+        <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        <button 
+          id="tutorial-menu-btn"
+          className="glass-btn" 
+          onClick={() => openSettings("preferences")}
+          style={{ width: "36px", height: "36px", padding: 0 }}
+          aria-label="Settings"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
       </div>
-    </div>
+
+      {mobileView === "map" && (
+        <button 
+          className="mobile-back-btn" 
+          onClick={resetAll}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+      )}
+
+      <SettingsModal  
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        language={language}
+        onLanguageChange={setLanguage}
+        cookieConsent={cookieConsent === true}
+        onCookieConsentChange={handleCookieConsentChange}
+        savedRoutes={savedRoutes}
+        onLoadRoute={loadSavedRoute}
+        onDeleteRoute={removeSavedRoute}
+        features={features}
+        onToggleFeature={toggleFeature}
+        initialTab={settingsTab}
+      />
+
+      {cookieConsent === null && (
+        <CookiePrompt 
+          onAccept={() => handleCookieConsentChange(true)} 
+          onDecline={() => handleCookieConsentChange(false)} 
+        />
+      )}
+
+      {isAdminOpen && (
+        <AdminDashboard onClose={() => { window.location.hash = ""; }} />
+      )}
+
+      <WelcomeTour setIsSettingsOpen={(val) => { if (val) openSettings("preferences"); else setIsSettingsOpen(false); }} />
+    </main>
   );
 }
 
 function ModeButton({ active, icon, label, onClick }: { active: boolean; icon: ReactNode; label: string; onClick: () => void }) {
   return (
-    <button className={active ? "active" : ""} type="button" onClick={onClick}>
+    <button className={`mode-pill ${active ? "active" : ""}`} type="button" onClick={onClick}>
       {icon}
       {label}
     </button>
   );
-}
-
-function IntroState({ mode }: { mode: TravelMode }) {
-  return (
-    <section className="empty-state intro-state">
-      <MapPin size={22} />
-      <p>
-        {mode === "train"
-          ? "Search two railway stations first. Thanal will show rail route choices before opening the map."
-          : "Search start and destination first. Thanal will show route choices before opening the map."}
-      </p>
-    </section>
-  );
-}
-
-function RouteOptionList({
-  compact = false,
-  onSelect,
-  options,
-  selectedRouteId,
-  title
-}: {
-  compact?: boolean;
-  onSelect: (option: RouteOption) => void;
-  options: RouteOption[];
-  selectedRouteId: string | null;
-  title: string;
-}) {
-  if (options.length === 0) return null;
-
-  return (
-    <section className={`route-options ${compact ? "compact" : ""}`}>
-      <div className="section-heading">
-        <span>
-          <Route size={16} />
-          {title}
-        </span>
-        <strong>{options.length}</strong>
-      </div>
-      {options.map((option) => (
-        <button
-          className={`route-option ${selectedRouteId === option.id ? "active" : ""}`}
-          key={option.id}
-          type="button"
-          onClick={() => onSelect(option)}
-        >
-          <span>{option.label}</span>
-          <strong>{Math.round(option.analysis.totalDurationMinutes)} min</strong>
-          <small>
-            {(option.analysis.totalDistanceMeters / 1000).toFixed(1)} km -{" "}
-            {formatSeat(option.analysis.recommendedSeat)}
-          </small>
-          {option.serviceHint ? <em>{option.serviceHint}</em> : null}
-        </button>
-      ))}
-    </section>
-  );
-}
-
-function AssistantCard({
-  answer,
-  isLoading,
-  message,
-  onAsk,
-  onMessageChange
-}: {
-  answer: string;
-  isLoading: boolean;
-  message: string;
-  onAsk: () => void;
-  onMessageChange: (value: string) => void;
-}) {
-  return (
-    <section className="assistant-card">
-      <div className="section-heading">
-        <span>
-          <Sparkles size={16} />
-          Ask Thanal AI
-        </span>
-      </div>
-      <div className="assistant-row">
-        <input
-          aria-label="Ask Thanal"
-          value={message}
-          onChange={(event) => onMessageChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") onAsk();
-          }}
-        />
-        <button className="primary icon-button" type="button" onClick={onAsk}>
-          <Sparkles size={17} />
-        </button>
-      </div>
-      {isLoading ? <p className="assistant-answer">Thinking with route tools...</p> : null}
-      {answer ? <p className="assistant-answer">{answer}</p> : null}
-    </section>
-  );
-}
-
-function ResultDetails({
-  analysis,
-  comfort,
-  weather
-}: {
-  analysis: RouteAnalysis | null;
-  comfort: ComfortScoreType | null;
-  weather: WeatherSnapshot | null;
-}) {
-  if (!analysis) return null;
-
-  return (
-    <>
-      <section className="result-card recommendation">
-        <span>Recommended seat</span>
-        <strong>{formatSeat(analysis.recommendedSeat)}</strong>
-        <small>
-          {Math.round(analysis.directSunMinutesBySide.left)} min sun on left,{" "}
-          {Math.round(analysis.directSunMinutesBySide.right)} min sun on right
-        </small>
-      </section>
-
-      <SunTimeline analysis={analysis} />
-
-      <section className="result-grid">
-        <div className="metric-tile">
-          <span>Distance</span>
-          <strong>{(analysis.totalDistanceMeters / 1000).toFixed(1)} km</strong>
-        </div>
-        <div className="metric-tile">
-          <span>Duration</span>
-          <strong>{Math.round(analysis.totalDurationMinutes)} min</strong>
-        </div>
-      </section>
-
-      {analysis.glareWindows.length > 0 ? (
-        <section className="result-card alert">
-          <span>Glare warning</span>
-          <strong>{analysis.glareWindows.length} route segments</strong>
-          <small>Sun is close to the forward heading on parts of this route.</small>
-        </section>
-      ) : null}
-
-      {comfort ? <ComfortScore comfort={comfort} /> : null}
-      {weather ? <RainWindow probability={weather.precipitationProbability ?? 0} timeline={weather.rainTimeline} /> : null}
-    </>
-  );
-}
-
-function SavedRoutes({
-  onLoad,
-  onRemove,
-  routes
-}: {
-  onLoad: (route: SavedRoute) => void;
-  onRemove: (id: number) => void;
-  routes: SavedRoute[];
-}) {
-  if (routes.length === 0) return null;
-
-  return (
-    <section className="result-card saved-list">
-      <div className="section-heading">
-        <span>Saved commutes</span>
-        <strong>{routes.length}</strong>
-      </div>
-      {routes.slice(0, 3).map((saved) => (
-        <div className="saved-route" key={saved.id}>
-          <button className="saved-route-main" type="button" onClick={() => onLoad(saved)}>
-            <span>{saved.name}</span>
-            <small>{saved.mode.toUpperCase()}</small>
-          </button>
-          <button
-            aria-label={`Delete ${saved.name}`}
-            className="saved-route-delete"
-            type="button"
-            onClick={() => onRemove(saved.id)}
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ))}
-    </section>
-  );
-}
-
-function PointRow({ label, point }: { label: string; point: LatLng | null }) {
-  return (
-    <div className="point-row">
-      <span>{label}</span>
-      <strong>{point ? `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}` : "Not set"}</strong>
-    </div>
-  );
-}
-
-function modeLabel(mode: TravelMode) {
-  if (mode === "bike") return "Bike";
-  if (mode === "train") return "Train";
-  if (mode === "walk") return "Walk";
-  return "Car";
 }
 
 function formatSeat(seat: RouteAnalysis["recommendedSeat"]): string {

@@ -6,11 +6,11 @@
     "orientation": "portrait",
     "scheme": "thanal",
     "userInterfaceStyle": "light",
-    "icon": "../../assets/Thanal_Logo.png",
+    "icon": "./assets/Thanal_Logo.png",
     "splash": {
-      "image": "../../assets/Thanal_text_png.png",
+      "image": "./assets/Thanal_text_png.png",
       "resizeMode": "contain",
-      "backgroundColor": "#f5f7f3"
+      "backgroundColor": "#FAFBFC"
     },
     "newArchEnabled": true,
     "ios": {
@@ -18,8 +18,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "../../assets/Thanal_Logo.png",
-        "backgroundColor": "#0f766e"
+        "foregroundImage": "./assets/Thanal_Logo.png",
+        "backgroundColor": "#ffffff"
       }
     },
     "plugins": ["expo-router", "expo-notifications"],

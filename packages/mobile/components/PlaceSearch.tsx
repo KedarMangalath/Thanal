@@ -1,32 +1,39 @@
 import type { LatLng } from "@thanal/shared";
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
+  Keyboard
 } from "react-native";
-import { searchPlaces, type PlaceResult } from "../utils/api";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../theme";
+import { searchPlaces, searchRailStations, type PlaceResult } from "../utils/api";
 
 type Props = {
   label: string;
   onSelect: (point: LatLng, name: string) => void;
-  searcher?: (query: string) => Promise<PlaceResult[]>;
+  isTrain?: boolean;
 };
 
-export default function PlaceSearch({ label, onSelect, searcher = searchPlaces }: Props) {
+export default function PlaceSearch({ label, onSelect, isTrain = false }: Props) {
+  const { theme } = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function runSearch() {
-    const trimmed = query.trim();
-    if (trimmed.length < 3) {
-      setError("Type at least 3 letters.");
+  const searcher = isTrain ? searchRailStations : searchPlaces;
+
+  async function runSearch(term: string) {
+    const trimmed = term.trim();
+    if (term.trim().length < 2) {
       setResults([]);
+      setError(null);
       return;
     }
 
@@ -42,51 +49,66 @@ export default function PlaceSearch({ label, onSelect, searcher = searchPlaces }
     }
   }
 
-  function pickPlace(place: PlaceResult) {
-    onSelect(
-      { lat: Number(place.lat), lng: Number(place.lon) },
-      shortName(place.display_name)
-    );
-    setQuery(shortName(place.display_name));
-    setResults([]);
-    setError(null);
+  function handleChangeText(text: string) {
+    setQuery(text);
+    
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => runSearch(text), 300);
   }
 
+  function pickPlace(place: PlaceResult) {
+    const name = shortName(place.display_name);
+    onSelect(
+      { lat: Number(place.lat), lng: Number(place.lon) },
+      name
+    );
+    setQuery(name);
+    setResults([]);
+    setError(null);
+    Keyboard.dismiss();
+  }
+
+  const styles = createStyles(theme);
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.row}>
+    <View style={styles.container}>
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>{label}</Text>
         <TextInput
           value={query}
-          onChangeText={setQuery}
-          placeholder="Search Kerala places"
-          placeholderTextColor="#8a9690"
-          returnKeyType="search"
-          onSubmitEditing={runSearch}
+          onChangeText={handleChangeText}
+          placeholder={isTrain ? "Search stations" : "Search places"}
+          placeholderTextColor={theme.colors.textMuted}
           style={styles.input}
         />
-        <Pressable style={styles.button} onPress={runSearch}>
-          {isLoading ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.buttonText}>Find</Text>
-          )}
-        </Pressable>
+        {isLoading && (
+          <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
+        )}
+        {query.length > 0 && !isLoading && (
+          <Pressable onPress={() => { setQuery(""); setResults([]); }} style={styles.clearBtn}>
+            <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+          </Pressable>
+        )}
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {results.map((place) => (
-        <Pressable
-          key={place.place_id}
-          style={styles.result}
-          onPress={() => pickPlace(place)}
-        >
-          <Text style={styles.resultTitle}>{shortName(place.display_name)}</Text>
-          <Text numberOfLines={2} style={styles.resultMeta}>
-            {place.display_name}
-          </Text>
-        </Pressable>
-      ))}
+      
+      {results.length > 0 && (
+        <View style={styles.resultsContainer}>
+          {results.map((place) => (
+            <Pressable
+              key={place.place_id}
+              style={styles.result}
+              onPress={() => pickPlace(place)}
+            >
+              <Text style={styles.resultTitle}>{shortName(place.display_name)}</Text>
+              <Text numberOfLines={1} style={styles.resultMeta}>
+                {place.display_name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -95,64 +117,75 @@ function shortName(displayName: string) {
   return displayName.split(",").slice(0, 2).join(",").trim();
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#ffffff",
-    borderColor: "#d7e0db",
-    borderRadius: 8,
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    zIndex: 10, // Ensure dropdown renders above other elements
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.surfaceHover,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    gap: 8,
-    padding: 12
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.md,
   },
   label: {
-    color: "#17211f",
-    fontSize: 14,
-    fontWeight: "800"
-  },
-  row: {
-    flexDirection: "row",
-    gap: 8
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    marginRight: theme.spacing.sm,
+    width: 32,
   },
   input: {
-    backgroundColor: "#f5f7f3",
-    borderColor: "#d7e0db",
-    borderRadius: 8,
-    borderWidth: 1,
-    color: "#17211f",
     flex: 1,
-    fontSize: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 10
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    paddingVertical: 10,
   },
-  button: {
-    alignItems: "center",
-    backgroundColor: "#0f766e",
-    borderRadius: 8,
-    justifyContent: "center",
-    minWidth: 72,
-    paddingHorizontal: 14
+  loader: {
+    marginLeft: theme.spacing.sm,
   },
-  buttonText: {
-    color: "#ffffff",
-    fontWeight: "800"
+  clearBtn: {
+    padding: theme.spacing.xs,
   },
   error: {
-    color: "#a15c00",
-    fontSize: 13
+    color: theme.colors.danger,
+    fontSize: 12,
+    marginTop: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  resultsContainer: {
+    position: "absolute",
+    top: 45,
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    maxHeight: 200,
+    overflow: "hidden",
   },
   result: {
-    borderTopColor: "#e5ebe7",
-    borderTopWidth: 1,
-    gap: 3,
-    paddingTop: 8
+    paddingVertical: 10,
+    paddingHorizontal: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   resultTitle: {
-    color: "#17211f",
-    fontWeight: "800"
+    color: theme.colors.textPrimary,
+    fontWeight: "600",
+    fontSize: 14,
   },
   resultMeta: {
-    color: "#66736d",
+    color: theme.colors.textMuted,
     fontSize: 12,
-    lineHeight: 16
+    marginTop: 2,
   }
 });
