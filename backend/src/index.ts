@@ -52,6 +52,10 @@ if (fs.existsSync(webDistPath)) {
 
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Thanal backend listening on http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(port, () => {
+    console.log(`Thanal backend listening on http://localhost:${port}`);
+  });
+}
+
+export default app;
