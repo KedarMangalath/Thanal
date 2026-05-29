@@ -1,4 +1,5 @@
-export default async function handler(req: any, res: any) {
-  const { default: app } = await import("../backend/src/index.js");
+import app from "../backend/src/index";
+
+export default function handler(req: any, res: any) {
   return app(req, res);
 }

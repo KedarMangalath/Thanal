@@ -1,8 +1,11 @@
 import { analyzeRoute, distanceMeters, type LatLng } from "@thanal/shared";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import createGraph from "ngraph.graph";
 import { aStar } from "ngraph.path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export type RailStation = LatLng & {
   code: string;
@@ -58,7 +61,7 @@ const keralaStations = Array.from(
 
 let allIndianStations: RailStation[] = [];
 try {
-  const dataPath = path.join(process.cwd(), "src", "stations.json");
+  const dataPath = path.join(__dirname, "..", "stations.json");
   const rawData = fs.readFileSync(dataPath, "utf-8");
   const geojson = JSON.parse(rawData);
   allIndianStations = geojson.features
@@ -79,7 +82,7 @@ const railGraph = createGraph();
 let pathFinder: any = null;
 
 try {
-  const trackPath = path.join(process.cwd(), "src", "rail-tracks.json");
+  const trackPath = path.join(__dirname, "..", "rail-tracks.json");
   if (fs.existsSync(trackPath)) {
     const lines = JSON.parse(fs.readFileSync(trackPath, "utf-8")) as LatLng[][];
     for (const line of lines) {

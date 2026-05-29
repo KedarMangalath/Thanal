@@ -6,7 +6,11 @@ import fs from "fs";
 
 const router = Router();
 
-const uploadsDir = path.join(process.cwd(), "uploads");
+const isVercel = !!process.env.VERCEL;
+const uploadsDir = isVercel
+  ? "/tmp/uploads"
+  : path.join(process.cwd(), "uploads");
+
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }

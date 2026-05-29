@@ -42,7 +42,7 @@ app.use("/api/washrooms", washroomsRouter);
 const webDistPath = path.resolve(process.cwd(), "../packages/web/dist");
 if (fs.existsSync(webDistPath)) {
   app.use(express.static(webDistPath));
-  app.get("*", (req, res, next) => {
+  app.get("/*any", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
       return next();
     }
