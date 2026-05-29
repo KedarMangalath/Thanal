@@ -5,7 +5,7 @@ import {
   type RouteAnalysis,
   type WeatherSnapshot
 } from "@thanal/shared";
-import { Bike, BookmarkPlus, Bus, ChevronDown, ChevronRight, ChevronUp, Clock, MapPin, Train, Trash2 } from "lucide-react";
+import { Bath, Bike, BookmarkPlus, Bus, Camera, ChevronDown, ChevronRight, ChevronUp, Clock, MapPin, Train, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -384,15 +384,7 @@ export default function App() {
               <select 
                 value={timeType} 
                 onChange={e => setTimeType(e.target.value as "depart" | "arrive")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--text-primary)",
-                  fontWeight: 500,
-                  fontSize: "var(--font-size-sm)",
-                  cursor: "pointer",
-                  outline: "none"
-                }}
+                className="time-type-select"
               >
                 <option value="depart">Depart at</option>
                 <option value="arrive">Arrive by</option>
@@ -460,40 +452,33 @@ export default function App() {
           {/* Quick-toggle checkboxes for map layers */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '10px', justifyContent: 'center' }}>
             <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Show:</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              <input 
-                type="checkbox" 
-                checked={features.cameras} 
-                onChange={() => toggleFeature("cameras")}
-                style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
-              />
-              Cameras
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              <input 
-                type="checkbox" 
-                checked={features.washrooms} 
-                onChange={() => toggleFeature("washrooms")}
-                style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
-              />
-              Washrooms
-            </label>
-          </div>
-          
-          <div style={{ textAlign: 'center', marginTop: '8px' }}>
-            <button 
+            <button
               type="button"
-              onClick={() => openSettings("feedback")}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontWeight: 500 }}
+              className={`toggle-btn ${features.cameras ? "active" : ""}`}
+              onClick={() => toggleFeature("cameras")}
             >
-              Found a bug or have a suggestion? Let us know
+              <Camera size={13} />
+              Cameras
+            </button>
+            <button
+              type="button"
+              className={`toggle-btn ${features.washrooms ? "active" : ""}`}
+              onClick={() => toggleFeature("washrooms")}
+            >
+              <Bath size={13} />
+              Washrooms
             </button>
           </div>
         </div>
         
 
         {/* Status */}
-        {status && <p className="status-line">{status}</p>}
+        {status && (
+          <p className="status-line">
+            {isLoading && <span className="pulse-dot" style={{ width: '6px', height: '6px', background: 'var(--accent)', borderRadius: '50%' }} />}
+            {status}
+          </p>
+        )}
 
         {/* Loading */}
         {isLoading && (
@@ -564,6 +549,16 @@ export default function App() {
             <span>Search or tap the map to set start and destination</span>
           </div>
         )}
+
+        <div className="sidebar-footer">
+          <button 
+            type="button"
+            onClick={() => openSettings("feedback")}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontWeight: 500 }}
+          >
+            Found a bug or have a suggestion? Let us know
+          </button>
+        </div>
       </aside>
 
       {/* Mobile Details Screen — must be outside sidebar so it isn't hidden */}

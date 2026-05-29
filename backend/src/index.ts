@@ -14,6 +14,7 @@ import uploadRouter from "./routes/upload";
 import washroomsRouter from "./routes/washrooms";
 import path from "path";
 import fs from "fs";
+import { initDb } from "./db/db";
 
 loadBackendEnv();
 
@@ -53,7 +54,6 @@ if (fs.existsSync(webDistPath)) {
 app.use(errorHandler);
 
 if (process.env.NODE_ENV !== "production") {
-  const { initDb } = require("./db/db");
   app.listen(port, async () => {
     await initDb();
     console.log(`Thanal backend listening on http://localhost:${port}`);
