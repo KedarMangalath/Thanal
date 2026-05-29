@@ -73,8 +73,7 @@ class TursoWrapper {
 
 export const db = isTurso ? new TursoWrapper() : new SQLiteWrapper();
 
-// Safe DB initialization/migrations
-(async () => {
+export async function initDb() {
   try {
     const schemaSql = `CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -164,13 +163,8 @@ CREATE TABLE IF NOT EXISTS washrooms (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`;
     await db.exec(schemaSql);
-    // Migration: add description column to existing washrooms tables
-    try {
-      await db.exec("ALTER TABLE washrooms ADD COLUMN description TEXT");
-    } catch {
-      // Column already exists — ignore
-    }
+    console.log("Database initialized successfully.");
   } catch (error) {
     console.error("Database initialization failed:", error);
   }
-})();
+}

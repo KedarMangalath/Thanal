@@ -53,7 +53,9 @@ if (fs.existsSync(webDistPath)) {
 app.use(errorHandler);
 
 if (process.env.NODE_ENV !== "production") {
-  app.listen(port, () => {
+  const { initDb } = require("./db/db");
+  app.listen(port, async () => {
+    await initDb();
     console.log(`Thanal backend listening on http://localhost:${port}`);
   });
 }
