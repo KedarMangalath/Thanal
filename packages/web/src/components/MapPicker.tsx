@@ -192,29 +192,12 @@ export default function MapPicker({
   return (
     <>
     {isReportingMode && (
-      <div style={{
-        position: 'absolute',
-        top: '24px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        background: 'var(--accent)',
-        color: '#fff',
-        padding: '10px 20px',
-        borderRadius: '24px',
-        boxShadow: '0 4px 16px rgba(13, 148, 136, 0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        fontWeight: 600,
-        fontSize: '13px',
-        animation: 'slideDown 0.3s ease-out',
-        border: '1px solid rgba(255,255,255,0.2)',
-        pointerEvents: 'auto',
-        whiteSpace: 'nowrap'
-      }}>
+      <div className="contribution-toast">
         <span className="pulse-dot" style={{ width: '8px', height: '8px', background: '#fff', borderRadius: '50%', display: 'inline-block' }} />
-        <span>Contribution Mode Active — Tap map to drop a washroom pin</span>
+        <span>
+          <span className="desktop-only">Contribution Mode Active — </span>
+          <span>Tap map to drop a washroom pin</span>
+        </span>
         <button 
           onClick={() => setIsReportingMode?.(false)} 
           style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', marginLeft: '8px', opacity: 0.8 }}
@@ -397,9 +380,9 @@ export default function MapPicker({
     )}
 
     {/* Floating action button for reporting */}
-    <div style={{ position: 'absolute', bottom: '24px', right: '24px', zIndex: 1000 }}>
+    <div className="desktop-only" style={{ position: 'absolute', bottom: '24px', right: '24px', zIndex: 1000 }}>
       {isReportingMode ? (
-        <div style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--primary)' }}>
+        <div style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--accent)' }}>
           <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>Tap on the map to drop pin</span>
           <button className="icon-btn" onClick={() => setIsReportingMode?.(false)} style={{ padding: '4px' }}><X size={14} /></button>
         </div>

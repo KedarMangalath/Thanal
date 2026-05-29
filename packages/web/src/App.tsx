@@ -441,15 +441,26 @@ export default function App() {
               setMobileView("map");
               setIsReportingMode(true);
             }}
-            style={{ width: '100%', padding: '12px', background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '12px', fontWeight: 600, marginTop: '16px' }}
+            style={{ 
+              width: '100%', 
+              padding: '8px 12px', 
+              background: 'var(--accent-soft)', 
+              color: 'var(--accent)', 
+              border: '1px solid var(--accent)', 
+              borderRadius: 'var(--radius-md)', 
+              fontWeight: 600, 
+              marginTop: '12px',
+              fontSize: '13px',
+              cursor: 'pointer'
+            }}
           >
             Community Contribution
           </button>
           
           {/* Quick-toggle checkboxes for map layers */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '12px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '10px', justifyContent: 'center' }}>
             <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Show:</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
               <input 
                 type="checkbox" 
                 checked={features.cameras} 
@@ -458,7 +469,7 @@ export default function App() {
               />
               Cameras
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
               <input 
                 type="checkbox" 
                 checked={features.washrooms} 
@@ -469,7 +480,7 @@ export default function App() {
             </label>
           </div>
           
-          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+          <div style={{ textAlign: 'center', marginTop: '8px' }}>
             <button 
               type="button"
               onClick={() => openSettings("feedback")}
@@ -742,7 +753,7 @@ export default function App() {
         </div>
       )}
 
-      {mobileView === "map" && hasRoutes && (
+      {mobileView === "map" && hasRoutes && !isReportingMode && (
         <button 
           className="top-report-btn glass-btn"
           onClick={() => {

@@ -96,11 +96,11 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   if (!token) {
     return (
       <div className="admin-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.1), transparent 50%), radial-gradient(circle at bottom left, rgba(var(--accent-rgb), 0.1), transparent 50%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(circle at top right, rgba(13, 148, 136, 0.1), transparent 50%), radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.1), transparent 50%)', pointerEvents: 'none' }} />
         
         <form onSubmit={handleLogin} className="glass-card" style={{ width: '90%', maxWidth: '380px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
           <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', marginBottom: '8px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent)', letterSpacing: '-0.5px', marginBottom: '8px' }}>
               Thanal<span style={{ color: 'var(--accent)' }}>Admin</span>
             </div>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Sign in to manage community reports</p>

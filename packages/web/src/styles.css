@@ -480,10 +480,10 @@ button, input, select, textarea {
 
 /* ─── Route Cards ─── */
 .route-cards {
-  padding: var(--space-md) var(--space-lg);
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 6px;
   animation: slideUp 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -491,11 +491,11 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 2px;
 }
 
 .route-cards-title {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   font-weight: var(--font-weight-semibold);
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -503,15 +503,15 @@ button, input, select, textarea {
 }
 
 .route-cards-count {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   color: var(--text-muted);
 }
 
 .route-card {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
+  gap: 10px;
+  padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -537,9 +537,9 @@ button, input, select, textarea {
 }
 
 .route-color-bar {
-  width: 4px;
-  height: 40px;
-  border-radius: 2px;
+  width: 3px;
+  height: 28px;
+  border-radius: 2.5px;
   flex-shrink: 0;
 }
 
@@ -549,7 +549,7 @@ button, input, select, textarea {
 }
 
 .route-card-label {
-  font-size: var(--font-size-sm);
+  font-size: 12px;
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
   white-space: nowrap;
@@ -558,15 +558,16 @@ button, input, select, textarea {
 }
 
 .route-card-meta {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   color: var(--text-secondary);
   display: flex;
-  gap: var(--space-sm);
+  gap: 6px;
   align-items: center;
+  margin-top: 2px;
 }
 
 .route-card-duration {
-  font-size: var(--font-size-lg);
+  font-size: 15px;
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   white-space: nowrap;
@@ -575,10 +576,10 @@ button, input, select, textarea {
 .route-card-seat {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
+  gap: 2px;
+  padding: 1px 6px;
   border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
+  font-size: 10px;
   font-weight: var(--font-weight-semibold);
   background: var(--accent-soft);
   color: var(--accent);
@@ -595,13 +596,13 @@ button, input, select, textarea {
 }
 
 .analysis-section {
-  padding: var(--space-md);
+  padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 4px;
 }
 
 .analysis-section-header {
@@ -611,7 +612,7 @@ button, input, select, textarea {
 }
 
 .analysis-section-label {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
   display: flex;
@@ -620,14 +621,14 @@ button, input, select, textarea {
 }
 
 .analysis-section-value {
-  font-size: var(--font-size-base);
+  font-size: 13px;
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
 }
 
 /* Seat Recommendation Hero */
 .seat-hero {
-  padding: var(--space-lg);
+  padding: 10px 14px;
   background: var(--accent-soft);
   border: 1px solid var(--accent);
   border-radius: var(--radius-md);
@@ -635,22 +636,22 @@ button, input, select, textarea {
 }
 
 .seat-hero-label {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   color: var(--text-secondary);
-  margin-bottom: var(--space-xs);
+  margin-bottom: 2px;
 }
 
 .seat-hero-value {
-  font-size: var(--font-size-hero);
+  font-size: 20px;
   font-weight: var(--font-weight-bold);
   color: var(--accent);
   line-height: var(--line-height-tight);
 }
 
 .seat-hero-detail {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   color: var(--text-secondary);
-  margin-top: var(--space-xs);
+  margin-top: 2px;
 }
 
 /* Metric Row */
@@ -661,7 +662,7 @@ button, input, select, textarea {
 }
 
 .metric-item {
-  padding: var(--space-md);
+  padding: 6px 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -681,8 +682,8 @@ button, input, select, textarea {
 /* Timeline Bar */
 .timeline-bar {
   display: flex;
-  height: 14px;
-  border-radius: 7px;
+  height: 10px;
+  border-radius: 5px;
   overflow: hidden;
   background: var(--surface-hover);
 }
@@ -698,8 +699,8 @@ button, input, select, textarea {
 
 .timeline-legend {
   display: flex;
-  gap: var(--space-md);
-  margin-top: var(--space-sm);
+  gap: var(--space-sm);
+  margin-top: 4px;
 }
 
 .legend-item {
@@ -740,7 +741,7 @@ button, input, select, textarea {
   display: flex;
   justify-content: space-between;
   gap: 2px;
-  height: 60px;
+  height: 48px;
   margin-top: var(--space-xs);
 }
 
@@ -779,50 +780,54 @@ button, input, select, textarea {
 
 /* Glare Alert */
 .glare-alert {
-  padding: var(--space-md);
+  padding: 6px 10px;
   background: var(--warning-soft);
   border: 1px solid var(--warning);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 2px;
 }
 
 .glare-alert-title {
-  font-size: var(--font-size-base);
+  font-size: 12px;
   font-weight: var(--font-weight-semibold);
   color: var(--warning);
 }
 
 .glare-alert-body {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
 /* ─── Trip Insight Card ─── */
 .insight-card {
-  padding: var(--space-md);
+  padding: 8px 12px;
   border-left: 3px solid var(--accent);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 4px;
   animation: slideUp 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .insight-header {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  font-size: var(--font-size-sm);
+  gap: 6px;
+  font-size: 12px;
   font-weight: var(--font-weight-semibold);
   color: var(--accent);
 }
 
 .insight-text {
-  font-size: var(--font-size-sm);
+  font-size: 12px;
   color: var(--text-secondary);
-  line-height: var(--line-height-normal);
+  line-height: 1.35;
   white-space: pre-wrap;
+}
+
+.insight-text p {
+  margin: 0;
 }
 
 /* ─── Saved Commutes ─── */
@@ -1384,8 +1389,8 @@ button, input, select, textarea {
 }
 
 .modal-tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .modal-body {
@@ -1791,4 +1796,27 @@ input:checked + .toggle-slider:before {
 .pulse-dot {
   animation: pulse-white 2s infinite;
   box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Contribution Toast ─── */
+.contribution-toast {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  animation: slideDown 0.3s ease-out;
+  border: 1px solid rgba(255,255,255,0.2);
+  pointer-events: auto;
+  white-space: nowrap;
 }

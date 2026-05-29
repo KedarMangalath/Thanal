@@ -102,13 +102,13 @@ export default function TripInsight({ mode, start, end, departureTime, analysis,
       )}
       
       {(analysis.speedCameras?.length ?? 0) > 0 && mode !== "train" && mode !== "walk" && (
-        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--surface)', border: '1px solid var(--warning)', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ background: 'var(--warning)', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Camera size={18} color="var(--bg)" />
+        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--surface)', border: '1px solid var(--warning)', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ background: 'var(--warning)', padding: '5px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Camera size={14} color="var(--bg)" />
           </div>
           <div>
-            <div style={{ fontWeight: 600, color: 'var(--warning)', marginBottom: '2px' }}>{analysis.speedCameras?.length} Speed Cameras Detected</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Drive safely. Community verified locations are shown on the map.</div>
+            <div style={{ fontWeight: 600, color: 'var(--warning)', marginBottom: '1px' }}>{analysis.speedCameras?.length} Speed Cameras Detected</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Drive safely. Community verified locations on map.</div>
           </div>
         </div>
       )}

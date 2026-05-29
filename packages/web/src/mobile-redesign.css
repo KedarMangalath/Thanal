@@ -52,7 +52,7 @@
 
   .top-report-btn {
     position: absolute;
-    top: 16px;
+    top: 72px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
@@ -63,6 +63,15 @@
     background: var(--surface);
     border: 1px solid var(--border-strong);
     box-shadow: var(--shadow-md);
-    color: var(--primary);
+    color: var(--accent);
+  }
+
+  .contribution-toast {
+    top: 72px !important;
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    border-radius: 20px !important;
+    max-width: 90% !important;
+    justify-content: center !important;
   }
 }

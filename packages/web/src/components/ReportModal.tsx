@@ -111,8 +111,8 @@ export default function ReportModal({ location, onClose, onSubmit }: Props) {
             {
               type: "public",
               label: "Public Washroom",
-              icon: <Bath size={20} style={{ color: "var(--primary)" }} />,
-              color: "var(--primary)",
+              icon: <Bath size={20} style={{ color: "var(--accent)" }} />,
+              color: "var(--accent)",
               desc: "Mark standard public toilets or rest facilities."
             },
             {

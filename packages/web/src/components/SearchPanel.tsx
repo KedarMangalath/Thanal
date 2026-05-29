@@ -54,7 +54,7 @@ export default function SearchPanel({
         ))}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
           {waypoints.length < 5 && (
-            <button type="button" onClick={onAddWaypoint} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+            <button type="button" onClick={onAddWaypoint} style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
               + Add stop
             </button>
           )}
