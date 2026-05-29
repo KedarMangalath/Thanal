@@ -13,4 +13,4 @@ npm-debug.log*
 coverage/
 docs/demo.gif
 docs/screenshots/*.png
-api/index.js
+api/_handler.js

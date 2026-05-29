@@ -12,7 +12,7 @@
     "dev:web": "npm run dev -w @thanal/web",
     "dev:mobile": "npm run start -w @thanal/mobile",
     "dev:backend": "npm run dev -w @thanal/backend",
-    "build": "npm run build --workspaces --if-present && esbuild api/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:sqlite3 --external:node:sqlite --external:@libsql/client",
+    "build": "npm run build --workspaces --if-present && esbuild backend/src/serverless.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/_handler.js --external:sqlite3 --external:node:sqlite --external:@libsql/client",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
   },
