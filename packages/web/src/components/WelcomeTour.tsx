@@ -18,7 +18,7 @@ export default function WelcomeTour({ setIsSettingsOpen }: Props) {
   }, []);
 
   const handleJoyrideEvent = (data: EventData) => {
-    const { status, index, action } = data;
+    const { status, index, action, type } = data;
     
     // When tutorial finishes or is skipped
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
@@ -27,11 +27,12 @@ export default function WelcomeTour({ setIsSettingsOpen }: Props) {
       localStorage.setItem("thanal_tour_seen", "true");
     }
 
-    // Step-specific logic
-    if (action === "next") {
-      // If we just finished the menu button step, open the menu for the next steps
-      if (index === 1 && setIsSettingsOpen) {
+    // Step-specific logic: open/close settings modal at the correct step transitions
+    if (type === "step:after") {
+      if (action === "next" && index === 2 && setIsSettingsOpen) {
         setIsSettingsOpen(true);
+      } else if (action === "prev" && index === 3 && setIsSettingsOpen) {
+        setIsSettingsOpen(false);
       }
     }
   };
@@ -41,8 +42,8 @@ export default function WelcomeTour({ setIsSettingsOpen }: Props) {
       target: "body",
       content: (
         <div>
-          <h2>Welcome to Thanal! ☀️</h2>
-          <p>Your sun-aware travel companion for India. Let's take a quick tour!</p>
+          <h2 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "8px" }}>Welcome to Thanal! ☀️</h2>
+          <p style={{ fontSize: "13px", lineHeight: "1.4", margin: 0 }}>Your sun-aware travel companion for Kerala. Let's take a quick tour!</p>
         </div>
       ),
       placement: "center",
@@ -76,22 +77,36 @@ export default function WelcomeTour({ setIsSettingsOpen }: Props) {
         showSkipButton: true,
         onEvent: handleJoyrideEvent,
         options: {
-          primaryColor: 'var(--primary)',
+          primaryColor: 'var(--accent)',
           textColor: 'var(--text-primary)',
-          backgroundColor: 'var(--bg)',
-          arrowColor: 'var(--bg)',
+          backgroundColor: 'var(--surface)',
+          arrowColor: 'var(--surface)',
           zIndex: 10000,
         },
         styles: {
+          tooltip: {
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            boxShadow: 'var(--shadow-lg)',
+            padding: '12px',
+          },
           tooltipContainer: {
             textAlign: 'left'
           },
           buttonNext: {
             borderRadius: '8px',
             padding: '8px 16px',
+            backgroundColor: 'var(--accent)',
+            color: 'var(--accent-text)',
+            fontWeight: '600',
           },
           buttonBack: {
-            color: 'var(--text-secondary)'
+            color: 'var(--text-secondary)',
+            marginRight: '8px',
+          },
+          buttonSkip: {
+            color: 'var(--text-muted)',
+            fontWeight: '500',
           }
         }
       } as any)}
