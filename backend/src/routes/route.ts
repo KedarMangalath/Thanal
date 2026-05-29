@@ -32,7 +32,7 @@ router.get("/", async (request, response, next) => {
     const reqDepartureTime = new Date(String(request.query.departureTime ?? new Date().toISOString()));
     const timeType = String(request.query.timeType ?? "depart");
     const routes = await fetchRoadRoutes(waypoints, 3);
-    const options = routes.map((route, index) => {
+    const options = await Promise.all(routes.map(async (route, index) => {
       const coordinates = routeCoordinates(route);
       let label = summarizeRoute(route);
       if (index > 0 && label === summarizeRoute(routes[0])) {
@@ -49,9 +49,9 @@ router.get("/", async (request, response, next) => {
         departureTime: routeDepartureTime,
         averageSpeedKmh: Math.max(18, (route.distance / route.duration) * 3.6)
       });
-      analysis.speedCameras = findCamerasOnRoute(coordinates);
-      analysis.shadeCoverPercent = calculateShadeCoverPercent(coordinates);
-      analysis.washrooms = findWashroomsOnRoute(coordinates);
+      analysis.speedCameras = await findCamerasOnRoute(coordinates);
+      analysis.shadeCoverPercent = await calculateShadeCoverPercent(coordinates);
+      analysis.washrooms = await findWashroomsOnRoute(coordinates);
 
       return {
         id: `road-${index + 1}`,
@@ -60,7 +60,7 @@ router.get("/", async (request, response, next) => {
         coordinates,
         analysis
       };
-    });
+    }));
     const recommended = options
       .map((option) => ({
         option,

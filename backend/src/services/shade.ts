@@ -11,17 +11,17 @@ type ShadeZone = {
 // Cache the shade zones in memory for fast lookup
 let cachedShadeZones: ShadeZone[] | null = null;
 
-function getShadeZones(): ShadeZone[] {
+async function getShadeZones(): Promise<ShadeZone[]> {
   if (!cachedShadeZones) {
-    cachedShadeZones = db.prepare("SELECT lat, lng, type, radius_meters FROM shade_zones").all() as unknown as ShadeZone[];
+    cachedShadeZones = (await db.query("SELECT lat, lng, type, radius_meters FROM shade_zones")) as unknown as ShadeZone[];
   }
   return cachedShadeZones;
 }
 
-export function calculateShadeCoverPercent(route: LatLng[]): number {
+export async function calculateShadeCoverPercent(route: LatLng[]): Promise<number> {
   if (route.length === 0) return 0;
   
-  const zones = getShadeZones();
+  const zones = await getShadeZones();
   if (zones.length === 0) return 0;
 
   // Pre-calculate route bounding box to filter zones

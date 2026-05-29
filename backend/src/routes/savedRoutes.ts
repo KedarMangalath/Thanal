@@ -22,9 +22,9 @@ const savedRouteSchema = z.object({
   departureTime: z.string().optional()
 });
 
-router.get("/", (_request, response) => {
-  const routes = db
-    .prepare(
+router.get("/", async (_request, response, next) => {
+  try {
+    const routes = await db.query(
       `SELECT
         id,
         user_id AS userId,
@@ -38,17 +38,19 @@ router.get("/", (_request, response) => {
         created_at AS createdAt
       FROM saved_routes
       ORDER BY created_at DESC`
-    )
-    .all();
+    );
 
-  response.json(routes);
+    response.json(routes);
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/:id/refresh", async (request, response, next) => {
   try {
     const id = z.coerce.number().int().positive().parse(request.params.id);
     const departureTime = new Date(String(request.query.departureTime ?? new Date().toISOString()));
-    const route = getSavedRoute(id);
+    const route = await getSavedRoute(id);
 
     if (!route) {
       response.status(404).json({ error: "Saved route not found." });
@@ -116,10 +118,10 @@ router.get("/:id/refresh", async (request, response, next) => {
   }
 });
 
-router.post("/", (request, response) => {
-  const route = savedRouteSchema.parse(request.body);
-  const result = db
-    .prepare(
+router.post("/", async (request, response, next) => {
+  try {
+    const route = savedRouteSchema.parse(request.body);
+    const result = await db.run(
       `INSERT INTO saved_routes (
         user_id,
         name,
@@ -130,32 +132,40 @@ router.post("/", (request, response) => {
         end_lng,
         departure_time
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      route.userId ?? null,
-      route.name,
-      route.mode,
-      route.start.lat,
-      route.start.lng,
-      route.end.lat,
-      route.end.lng,
-      route.departureTime ?? null
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        route.userId ?? null,
+        route.name,
+        route.mode,
+        route.start.lat,
+        route.start.lng,
+        route.end.lat,
+        route.end.lng,
+        route.departureTime ?? null
+      ]
     );
 
-  response.status(201).json(getSavedRoute(Number(result.lastInsertRowid)));
+    const saved = await getSavedRoute(Number(result.lastInsertRowid));
+    response.status(201).json(saved);
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.delete("/:id", (request, response) => {
-  const id = z.coerce.number().int().positive().parse(request.params.id);
-  const result = db.prepare("DELETE FROM saved_routes WHERE id = ?").run(id);
+router.delete("/:id", async (request, response, next) => {
+  try {
+    const id = z.coerce.number().int().positive().parse(request.params.id);
+    const result = await db.run("DELETE FROM saved_routes WHERE id = ?", [id]);
 
-  if (result.changes === 0) {
-    response.status(404).json({ error: "Saved route not found." });
-    return;
+    if (result.changes === 0) {
+      response.status(404).json({ error: "Saved route not found." });
+      return;
+    }
+
+    response.status(204).send();
+  } catch (error) {
+    next(error);
   }
-
-  response.status(204).send();
 });
 
 type SavedRouteRow = {
@@ -171,26 +181,24 @@ type SavedRouteRow = {
   createdAt: string;
 };
 
-function getSavedRoute(id: number): SavedRouteRow | null {
-  return (
-    (db
-      .prepare(
-        `SELECT
-          id,
-          user_id AS userId,
-          name,
-          mode,
-          start_lat AS startLat,
-          start_lng AS startLng,
-          end_lat AS endLat,
-          end_lng AS endLng,
-          departure_time AS departureTime,
-          created_at AS createdAt
-        FROM saved_routes
-        WHERE id = ?`
-      )
-      .get(id) as SavedRouteRow | undefined) ?? null
+async function getSavedRoute(id: number): Promise<SavedRouteRow | null> {
+  const rows = await db.query(
+    `SELECT
+      id,
+      user_id AS userId,
+      name,
+      mode,
+      start_lat AS startLat,
+      start_lng AS startLng,
+      end_lat AS endLat,
+      end_lng AS endLng,
+      departure_time AS departureTime,
+      created_at AS createdAt
+    FROM saved_routes
+    WHERE id = ?`,
+    [id]
   );
+  return (rows[0] as SavedRouteRow | undefined) ?? null;
 }
 
 export default router;

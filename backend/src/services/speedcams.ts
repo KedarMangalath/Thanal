@@ -10,11 +10,13 @@ export type SpeedCamera = {
   status: string;
 };
 
-export function findCamerasOnRoute(route: LatLng[], thresholdMeters = 50): SpeedCamera[] {
+export async function findCamerasOnRoute(route: LatLng[], thresholdMeters = 50): Promise<SpeedCamera[]> {
   if (route.length === 0) return [];
   
   // Fetch all active speed cameras from DB
-  const speedCameras = db.prepare("SELECT id, lat, lng, source, verified, status FROM speed_cameras WHERE status = 'active'").all() as unknown as SpeedCamera[];
+  const speedCameras = (await db.query(
+    "SELECT id, lat, lng, source, verified, status FROM speed_cameras WHERE status = 'active'"
+  )) as unknown as SpeedCamera[];
   if (speedCameras.length === 0) return [];
 
   const foundCameras: SpeedCamera[] = [];

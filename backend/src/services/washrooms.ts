@@ -16,17 +16,19 @@ export type Washroom = {
 // Simple in-memory cache to avoid querying the DB for all washrooms on every route
 let cachedWashrooms: Washroom[] | null = null;
 
-export function getWashrooms(): Washroom[] {
+export async function getWashrooms(): Promise<Washroom[]> {
   if (!cachedWashrooms) {
-    cachedWashrooms = db.prepare("SELECT id, lat, lng, type, status, upvotes, downvotes, image_url, description FROM washrooms").all() as unknown as Washroom[];
+    cachedWashrooms = (await db.query(
+      "SELECT id, lat, lng, type, status, upvotes, downvotes, image_url, description FROM washrooms"
+    )) as unknown as Washroom[];
   }
   return cachedWashrooms;
 }
 
-export function findWashroomsOnRoute(route: LatLng[]): Washroom[] {
+export async function findWashroomsOnRoute(route: LatLng[]): Promise<Washroom[]> {
   if (route.length === 0) return [];
   
-  const allWashrooms = getWashrooms();
+  const allWashrooms = await getWashrooms();
   if (allWashrooms.length === 0) return [];
 
   const found: Washroom[] = [];
